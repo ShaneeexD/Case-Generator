@@ -248,7 +248,7 @@ Public Class Form1
                  }
                 entry.Add("vmailProgressThreshold", vmailProgress)
                 entry.Add("chance", Convert.ToSingle(CType(panelLeads.Controls.OfType(Of TextBox).First(Function(x) x.Name = "txtChance"), TextBox).Text))
-                entry.Add("spawnItem", If(CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbSpawnItem"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:InteractablePreset|" & CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbSpawnItem"), ComboBox).SelectedItem.ToString()))
+                entry.Add("spawnItem", If(CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbSpawnItem"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:InteractablePreset|" & CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbSpawnItem"), ComboBox).Text.ToString))
                 entry.Add("vmailThread", CType(panelLeads.Controls.OfType(Of TextBox).First(Function(x) x.Name = "txtVmail"), TextBox).Text)
                 entry.Add("writer", CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbWriter"), ComboBox).SelectedIndex)
                 entry.Add("receiver", CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbReceiver"), ComboBox).SelectedIndex)
@@ -293,7 +293,7 @@ Public Class Form1
         For Each tpCallingCard As TabPage In tabControlCase.TabPages
             If tpCallingCard.Text.StartsWith("Calling Card Entry") Then
                 Dim cardEntry As New JObject From {
-            {"item", If(CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbItem"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:InteractablePreset|" & CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbItem"), ComboBox).SelectedItem.ToString())},
+            {"item", If(CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbItem"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:InteractablePreset|" & CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbItem"), ComboBox).Text.ToString)},
             {"origin", CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbOrigin"), ComboBox).SelectedIndex},
             {"randomScoreRange", New JObject From {
                 {"x", Convert.ToInt32(CType(tpCallingCard.Controls.OfType(Of TextBox).First(Function(x) x.Name = "txtRandomScoreX"), TextBox).Text)},
@@ -443,9 +443,9 @@ Public Class Form1
         For Each tpKillerGraffiti As TabPage In tabControlCase.TabPages
             If tpKillerGraffiti.Text.StartsWith("Graffiti Entry") Then
                 Dim killerGraffitiEntry As New JObject From {
-            {"preset", If(CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbPreset"), ComboBox).SelectedIndex = -1, CType(Nothing, String), "REF:InteractablePreset|" & CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbPreset"), ComboBox).SelectedItem.ToString())},
+            {"preset", If(CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbPreset"), ComboBox).SelectedIndex = -1, CType(Nothing, String), "REF:InteractablePreset|" & CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbPreset"), ComboBox).Text.ToString)},
             {"pos", CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbPos"), ComboBox).SelectedIndex},
-            {"artImage", If(CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbArtImage"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:ArtPreset|" & CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbArtImage"), ComboBox).SelectedItem.ToString())},
+            {"artImage", If(CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbArtImage"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:ArtPreset|" & CType(tpKillerGraffiti.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbArtImage"), ComboBox).Text.ToString)},
             {"ddsMessageTextList", CType(tpKillerGraffiti.Controls.OfType(Of TextBox).First(Function(x) x.Name = "txtDDSMessageText"), TextBox).Text},
             {"color", CType(tpKillerGraffiti.Controls.OfType(Of TextBox).First(Function(x) x.Name = "txtColor"), TextBox).Text},
             {"size", CInt(CType(tpKillerGraffiti.Controls.OfType(Of NumericUpDown).First(Function(x) x.Name = "numSize"), NumericUpDown).Value)},
@@ -4573,6 +4573,7 @@ Public Class Form1
             ElseIf TypeOf ctrl Is ComboBox Then
                 Dim handler As EventHandler = AddressOf ControlValueChanged
                 AddHandler DirectCast(ctrl, ComboBox).SelectedIndexChanged, handler
+                AddHandler DirectCast(ctrl, ComboBox).TextChanged, handler
                 controlEventHandlers(ctrl) = handler
             ElseIf TypeOf ctrl Is NumericUpDown Then
                 Dim handler As EventHandler = AddressOf ControlValueChanged
@@ -4620,6 +4621,7 @@ Public Class Form1
                     RemoveHandler DirectCast(ctrl, RadioButton).CheckedChanged, DirectCast(controlEventHandlers(ctrl), EventHandler)
                 ElseIf TypeOf ctrl Is ComboBox Then
                     RemoveHandler DirectCast(ctrl, ComboBox).SelectedIndexChanged, DirectCast(controlEventHandlers(ctrl), EventHandler)
+                    RemoveHandler DirectCast(ctrl, ComboBox).TextChanged, DirectCast(controlEventHandlers(ctrl), EventHandler)
                 ElseIf TypeOf ctrl Is NumericUpDown Then
                     RemoveHandler DirectCast(ctrl, NumericUpDown).ValueChanged, DirectCast(controlEventHandlers(ctrl), EventHandler)
                 ElseIf TypeOf ctrl Is DateTimePicker Then
