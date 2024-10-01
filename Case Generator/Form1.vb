@@ -4458,26 +4458,22 @@ Public Class Form1
         End If
     End Sub
     Private Sub OpenCase()
-        ' Create and configure the OpenFileDialog
         Dim openFileDialog As New OpenFileDialog()
 
-        ' Set filter options and title
         openFileDialog.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*"
         openFileDialog.Title = "Select a case"
 
-        ' Show the dialog and check if the user clicked OK
         If openFileDialog.ShowDialog() = DialogResult.OK Then
-            ' Get the file path from the dialog
+
             Dim filePath As String = openFileDialog.FileName
             Dim folderName As String = IO.Path.GetFileName(IO.Path.GetDirectoryName(filePath))
 
             tempFilePath = filePath
             tempFolderName = folderName
-            ' Load the default JSON
-            Dim defaultJson As JObject = JObject.Parse(GetDefaultJson())
 
-            ' Load the JSON data from the file
+            Dim defaultJson As JObject = JObject.Parse(GetDefaultJson())
             Dim loadedJsonData As JObject
+
             Try
                 Dim jsonContent As String = File.ReadAllText(filePath)
                 loadedJsonData = JObject.Parse(jsonContent)
@@ -4487,15 +4483,12 @@ Public Class Form1
             End Try
 
             ResetTabCount()
-            ' Merge loaded JSON into default JSON
             MergeJson(defaultJson, loadedJsonData)
 
             ' Save the merged JSON back to the file (overwriting)
             File.WriteAllText(filePath, defaultJson.ToString())
-
-            ' Load the JSON data into the form using the existing method
             LoadJsonData(filePath)
-            ' Display the merged JSON content in txtOutput
+
             Dim jsonContentNew As String = File.ReadAllText(filePath)
             loadedJsonDataPub = JObject.Parse(jsonContentNew)
             txtOutput.Text = jsonContentNew.ToString()
@@ -4539,17 +4532,13 @@ Public Class Form1
         End If
     End Sub
     Public Sub CreateNewCase()
-        ' Initialize FolderBrowserDialog
         Dim folderBrowserDialog As New FolderBrowserDialog()
         folderBrowserDialog.Description = "Select a location to create a new case folder"
 
-        ' Show the dialog and get the user's selection
         If folderBrowserDialog.ShowDialog() = DialogResult.OK Then
-            ' Prompt the user to enter a folder name
             Dim folderName As String = InputBox("Enter the name for the new case:", "Case/Folder Name")
             tempFolderName = folderName
 
-            ' Check if the user provided a name
             If Not String.IsNullOrWhiteSpace(folderName) Then
                 isCaseMadeOrLoaded = True
                 ' Combine the selected path with the new folder name
@@ -4756,13 +4745,11 @@ Public Class Form1
     Private Sub RemoveUnusedKeys()
         Dim jsonContent As String = txtOutput.Text
 
-        ' Parse the JSON content
         Dim jsonData As JObject = JObject.Parse(jsonContent)
 
-        ' Create a list of keys to remove
         Dim keysToRemove As New List(Of String)
         Dim disableHexaco As Boolean = False
-        ' Loop through each property in the JObject
+
         For Each propertyPair In jsonData.Properties()
             Dim key As String = propertyPair.Name
             Dim value As JToken = propertyPair.Value
@@ -4774,7 +4761,6 @@ Public Class Form1
                (value.Type = JTokenType.Object AndAlso Not value.HasValues) OrElse
                (value.Type = JTokenType.Boolean AndAlso Boolean.Parse(value) = False AndAlso key <> "disabled" AndAlso key <> "allowAnywhere" AndAlso key <> "allowHome" AndAlso key <> "allowWork" AndAlso key <> "allowPublic" AndAlso key <> "allowStreets" AndAlso key <> "allowDen") OrElse
                (value.Type = JTokenType.Integer AndAlso Integer.Parse(value) = 0) Then
-                ' Add the key to the list of keys to remove
                 keysToRemove.Add(key)
             End If
             ' Manual Removal
@@ -4790,7 +4776,6 @@ Public Class Form1
             End If
         Next
 
-        ' Remove the unused keys from jsonData
         For Each key In keysToRemove
             jsonData.Remove(key)
         Next
@@ -4800,7 +4785,6 @@ Public Class Form1
         RemoveRangeIfDefault(jsonData, "pickRandomScoreRange")
         RemoveRangeIfDefault(jsonData, "victimRandomScoreRange")
 
-        ' Update the txtOutput with the cleaned JSON
         txtOutput.Text = jsonData.ToString()
         FormatJson()
     End Sub
@@ -4831,20 +4815,15 @@ Public Class Form1
         isCaseMadeOrLoaded = False
     End Sub
     Private Sub SaveCase()
-        ' Initialize SaveFileDialog
         Dim saveFileDialog As New SaveFileDialog
         saveFileDialog.Filter = "Shadows of Doubt SOJSON Files (*.sodso.json)|*.sodso.json"
         saveFileDialog.Title = "Save Case and Manifest Files"
 
-        ' Set default file name for the preset case JSON (in lowercase)
         saveFileDialog.FileName = txtPresetName.Text.ToLower() & ".sodso.json"
 
-        ' Show the dialog and get the file path
         If saveFileDialog.ShowDialog() = DialogResult.OK Then
-            ' Get the directory where the files will be saved
             Dim saveDirectory As String = IO.Path.GetDirectoryName(saveFileDialog.FileName)
 
-            ' Define the file paths (preset case file in lowercase)
             Dim presetFilePath As String = IO.Path.Combine(saveDirectory, txtPresetName.Text.ToLower() & ".sodso.json")
             Dim manifestFilePath As String = IO.Path.Combine(saveDirectory, "murdermanifest.sodso.json")
 
@@ -5194,14 +5173,12 @@ Public Class Form1
         Return String.Compare(current, latest) < 0
     End Function
     Public Function FindControlRecursive(Of T As Control)(ByVal parent As Control, ByVal matchCondition As Func(Of T, Boolean)) As T
-        ' Loop through all controls in the parent
         For Each ctrl As Control In parent.Controls
 
             If TypeOf ctrl Is T AndAlso matchCondition(DirectCast(ctrl, T)) Then
                 Return DirectCast(ctrl, T)
             End If
 
-            ' Recursively search in child controls
             Dim foundControl As T = FindControlRecursive(Of T)(ctrl, matchCondition)
             If foundControl IsNot Nothing Then
                 Return foundControl
