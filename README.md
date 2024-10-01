@@ -1,10 +1,10 @@
+NOTE: Windows Defender may pick this up as a virus (it does for me), the source code is available for you to see
+=
 This tool allows you to create custom cases for SOD using piepieonline's mod which can be found [here](https://thunderstore.io/c/shadows-of-doubt/p/Piepieonline/CommunityCaseLoader/).
 
 It's fully functional but will be heavily refactored and updated in the future for optimization as it was done on the fly, possibly as a fresh new project completely.
 
 Please let me know if you find any bugs and I will try to fix them asap.
-
-NOTE: Windows Defender may pick this up as a virus (it does for me), the source code is all available for you to see
 
 Currently working on finishing the tool tips.
 
