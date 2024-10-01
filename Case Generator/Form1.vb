@@ -4775,7 +4775,7 @@ Public Class Form1
     End Sub
     Private Sub CheckForUpdates()
         Try
-            Dim updateFileUrl As String = "https://raw.githubusercontent.com/ShaneeexD/Case-Generator/3f05e99aa3ec88728b7eb4fbc26fe0fba4ddeed2/Case%20Generator/Resources/update.txt"
+            Dim updateFileUrl As String = "https://raw.githubusercontent.com/ShaneeexD/Case-Generator/refs/heads/master/Case%20Generator/Resources/update.txt"
 
             Using client As New System.Net.WebClient()
                 Dim updateInfo As String = client.DownloadString(updateFileUrl)
@@ -4798,9 +4798,12 @@ Public Class Form1
                             .UseShellExecute = True
                 })
                         End If
+                    Else
+                        MessageBox.Show("You are up to date!")
                     End If
+
                 Else
-                    MessageBox.Show("Update information is not in the correct format.")
+                    MessageBox.Show("Update information is not in the correct format." & vbCrLf & "(Contact me I messed up)")
                 End If
             End Using
         Catch ex As Exception
