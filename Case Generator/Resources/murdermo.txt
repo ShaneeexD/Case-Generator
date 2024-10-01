@@ -1,0 +1,13 @@
+null
+CorporateJealousy
+ExCopSniper
+FinancialKidnapper
+Hitman
+MadScientistKidnapper
+RedGumsKiller
+TheCoporateKiller
+TheDoveKiller
+TheftGoneWrong
+TheRetiredKiller
+TheScammer
+VoyeurSniper

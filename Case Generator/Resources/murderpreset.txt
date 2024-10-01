@@ -1,0 +1,5 @@
+null
+Hitman
+Kidnapper
+SerialKiller
+Sniper
