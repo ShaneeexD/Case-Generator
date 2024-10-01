@@ -1308,7 +1308,7 @@ Public Class Form1
             cbSpawnItemValue = cbSpawnItemValue.Replace("REF:InteractablePreset|", "")
             If Not cbSpawnItem.Items.Contains(cbSpawnItemValue) Then
                 cbSpawnItem.Items.Add(cbSpawnItemValue)
-                cbSpawnItem.SelectedItem = cbSpawnItem
+                cbSpawnItem.SelectedItem = cbSpawnItemValue
             Else
                 SetComboBoxText(cbSpawnItem, cbSpawnItemValue)
             End If

@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk/8.0.401">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net5.0-windows;net6.0-windows;net7.0-windows;net8.0-windows</TargetFrameworks>
+    <TargetFramework>net5.0-windows;net6.0;net7.0;net8.0</TargetFramework>
     <RootNamespace>Case_Generator</RootNamespace>
     <StartupObject>Sub Main</StartupObject>
     <UseWindowsForms>true</UseWindowsForms>
