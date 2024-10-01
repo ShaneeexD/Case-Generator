@@ -1,12 +1,10 @@
-﻿Imports AutoUpdaterDotNET
-Imports Newtonsoft.Json
+﻿Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports System.IO
-Imports System.Security.Policy
 Imports System.Text
 
 Public Class Form1
-    Private currentVersion As String = "1.0.0" ' Your current application version
+    Private currentVersion As String = "1.0.0"
 
     Private defaultValues As New Dictionary(Of String, Object)
     Private listBoxItemCounts As New Dictionary(Of ListBox, Integer)
@@ -117,14 +115,12 @@ Public Class Form1
         Dim defaultCase As JObject = JObject.Parse(GetDefaultJson())
 
         If loadedJsonDataPub IsNot Nothing Then
-            ' Merge loadedJsonData into defaultCase
             For Each jsonProperty In loadedJsonDataPub.Properties()
                 defaultCase(jsonProperty.Name) = jsonProperty.Value
             Next
         End If
 
         Dim presetName As String = If(String.IsNullOrEmpty(txtPresetName.Text), defaultCase("name")?.ToString(), txtPresetName.Text)
-        ' Update default values with form data
         defaultCase("presetName") = presetName
         defaultCase("notes") = txtNotes.Text
 
@@ -169,48 +165,37 @@ Public Class Form1
         defaultCase("victimClassRange")("y") = Integer.Parse(nudVictimCrY.Value)
         defaultCase("victimClassRangeBoost") = Integer.Parse(nudVictimCRBoost.Value)
 
-        ' Update Hexaco Traits
         If cmbUseHexaco.SelectedItem.ToString().ToLower() = "true" Then
             defaultCase("useHexaco") = True
 
-            ' Retrieve the hexaco values from the controls on the tab
             Dim hexaco As New JObject()
             For Each tpHexaco As TabPage In tabControlCase.TabPages
                 If tpHexaco.Text.StartsWith("Hexaco Modifiers") Then
 
-                    ' For each trait, retrieve the numeric value and the corresponding enable flag from ComboBox
                     hexaco("outputMin") = CInt(CType(tpHexaco.Controls("nudOutputMin"), NumericUpDown).Value)
                     hexaco("outputMax") = CInt(CType(tpHexaco.Controls("nudOutputMax"), NumericUpDown).Value)
 
-                    ' Feminine Masculine trait
                     hexaco("enableFeminineMasculine") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableFeminineMasculine"), ComboBox).SelectedItem.ToString())
                     hexaco("feminineMasculine") = CInt(CType(tpHexaco.Controls("nudFeminineMasculine"), NumericUpDown).Value)
 
-                    ' Humility trait
                     hexaco("enableHumility") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableHumility"), ComboBox).SelectedItem.ToString())
                     hexaco("humility") = CInt(CType(tpHexaco.Controls("nudHumility"), NumericUpDown).Value)
 
-                    ' Emotionality trait
                     hexaco("enableEmotionality") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableEmotionality"), ComboBox).SelectedItem.ToString())
                     hexaco("emotionality") = CInt(CType(tpHexaco.Controls("nudEmotionality"), NumericUpDown).Value)
 
-                    ' Extraversion trait
                     hexaco("enableExtraversion") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableExtraversion"), ComboBox).SelectedItem.ToString())
                     hexaco("extraversion") = CInt(CType(tpHexaco.Controls("nudExtraversion"), NumericUpDown).Value)
 
-                    ' Agreeableness trait
                     hexaco("enableAgreeableness") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableAgreeableness"), ComboBox).SelectedItem.ToString())
                     hexaco("agreeableness") = CInt(CType(tpHexaco.Controls("nudAgreeableness"), NumericUpDown).Value)
 
-                    ' Conscientiousness trait
                     hexaco("enableConscientiousness") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableConscientiousness"), ComboBox).SelectedItem.ToString())
                     hexaco("conscientiousness") = CInt(CType(tpHexaco.Controls("nudConscientiousness"), NumericUpDown).Value)
 
-                    ' Creativity trait
                     hexaco("enableCreativity") = Boolean.Parse(CType(tpHexaco.Controls("cbEnableCreativity"), ComboBox).SelectedItem.ToString())
                     hexaco("creativity") = CInt(CType(tpHexaco.Controls("nudCreativity"), NumericUpDown).Value)
 
-                    ' Assign the hexaco data back to the default JSON
                     defaultCase("hexaco") = hexaco
                 End If
             Next
@@ -219,40 +204,33 @@ Public Class Form1
         End If
 
 
-        ' Update MOleads
         Dim moleads As New JArray()
 
         For Each tpMOlead As TabPage In tabControlCase.TabPages
-            If tpMOlead.Text.StartsWith("MOlead Entry") Then ' Check for MOlead tabs
+            If tpMOlead.Text.StartsWith("MOlead Entry") Then
                 Dim panelLeads As Panel = tpMOlead.Controls.OfType(Of Panel)().FirstOrDefault(Function(p) p.Name.Contains("pnLeads"))
 
-                ' Create the JSON object for each entry
                 Dim entry As New JObject From {
             {"name", CType(panelLeads.Controls.OfType(Of TextBox).First(Function(x) x.Name = "txtName"), TextBox).Text},
             {"compatibleWithAllMotives", If(CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbAllMotives"), ComboBox).SelectedIndex = 0, 1, 0)},
-            {"compatibleWithMotives", New JArray()} ' Placeholder, we'll update this next
+            {"compatibleWithMotives", New JArray()}
         }
 
-                ' Handle the "compatibleWithMotives" logic
                 Dim motivesList As New JArray()
                 Dim lbMotives As ListBox = CType(panelLeads.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lbMotives"), ListBox)
 
                 For Each item As String In lbMotives.Items.Cast(Of String)()
                     Dim parsedInt As Integer
                     If Integer.TryParse(item, parsedInt) Then
-                        ' Item is an integer, add it as a dictionary with "fileID" key
                         motivesList.Add(New JObject(New JProperty("fileID", parsedInt)))
                     Else
-                        ' Item is a string, prepend "REF:MurderMO|"
                         motivesList.Add("REF:MurderMO|" & item)
                     End If
                 Next
 
-                ' Update the entry's "compatibleWithMotives" with the built motivesList
                 entry("compatibleWithMotives") = motivesList
 
 
-                ' Add other fields to the entry
                 entry.Add("spawnOnPhase", CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbSpawnPhase"), ComboBox).SelectedIndex)
                 entry.Add("tryToSpawnWithEachNewMurder", If(CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbSpawnEachMurder"), ComboBox).SelectedIndex = 0, 1, 0))
                 entry.Add("belongsTo", CType(panelLeads.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbBelongsTo"), ComboBox).SelectedIndex)
@@ -288,8 +266,6 @@ Public Class Form1
 
                 entry("vmailOtherParticipants") = othersList
 
-                'moleads.Add(entry)
-
                 Dim innerTabControlMO As TabControl = panelLeads.Controls.OfType(Of TabControl)().FirstOrDefault(Function(p) p.Name.Contains("innerTabControlMO"))
 
                 If innerTabControlMO IsNot Nothing Then
@@ -309,11 +285,9 @@ Public Class Form1
             End If
         Next
 
-        ' Set the updated moleads array in defaultCase
         defaultCase("MOleads") = moleads
 
 
-        ' Update callingCardPool
         Dim callingCardPool As New JArray()
 
         For Each tpCallingCard As TabPage In tabControlCase.TabPages
@@ -329,7 +303,6 @@ Public Class Form1
             {"copyFrom", If(CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbCopyFrom"), ComboBox).SelectedIndex = 0, CType(Nothing, String), "REF:MurderMO|" & If(CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbCopyFrom"), ComboBox).SelectedIndex = -1, CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbCopyFrom"), ComboBox).Text, CType(tpCallingCard.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbCopyFrom"), ComboBox).SelectedItem.ToString()))}
         }
 
-                ' Find the inner TabControl that holds the trait modifier tabs
                 Dim innerTabControl As TabControl = tpCallingCard.Controls.OfType(Of TabControl)().FirstOrDefault(Function(p) p.Name.Contains("innerTabControl"))
 
 
@@ -351,10 +324,9 @@ Public Class Form1
 
         defaultCase("callingCardPool") = callingCardPool
 
-        ' Update Murderer traitModifiers
         Dim traitModifiers As New JArray()
         For Each tpMurdererTraits As TabPage In tabControlCase.TabPages
-            If tpMurdererTraits.Text.StartsWith("Murderer Trait Modifiers") Then ' Check for Trait Modifiers tabs
+            If tpMurdererTraits.Text.StartsWith("Murderer Trait Modifiers") Then
                 Dim traitModifierEntry As New JObject From {
             {"rule", CType(tpMurdererTraits.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbRule"), ComboBox).SelectedIndex},
             {"traitList", New JArray(CType(tpMurdererTraits.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstTraits"), ListBox).Items.Cast(Of String)().Select(Function(item) "REF:CharacterTrait|" & item).ToArray())},
@@ -367,10 +339,9 @@ Public Class Form1
         Next
         defaultCase("murdererTraitModifiers") = traitModifiers
 
-        ' Update Victim traitModifiers
         Dim victimTraitModifiers As New JArray()
         For Each tpVictimTraits As TabPage In tabControlCase.TabPages
-            If tpVictimTraits.Text.StartsWith("Victim Trait Modifiers") Then ' Check for Trait Modifiers tabs
+            If tpVictimTraits.Text.StartsWith("Victim Trait Modifiers") Then
                 Dim victimTraitModifierEntry As New JObject From {
             {"rule", CType(tpVictimTraits.Controls.OfType(Of ComboBox).First(Function(x) x.Name = "cbRule"), ComboBox).SelectedIndex},
             {"traitList", New JArray(CType(tpVictimTraits.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstTraits"), ListBox).Items.Cast(Of String)().Select(Function(item) "REF:CharacterTrait|" & item).ToArray())},
@@ -383,14 +354,11 @@ Public Class Form1
         Next
         defaultCase("victimTraitModifiers") = victimTraitModifiers
 
-        ' Update weaponsPool
         Dim weaponsPool As New JArray()
         For Each tpWeapon As TabPage In tabControlCase.TabPages
-            If tpWeapon.Text.StartsWith("Weapon Entry") Then ' Check for Weapon tabs
-                ' Get the ListBox containing the weapons
+            If tpWeapon.Text.StartsWith("Weapon Entry") Then
                 Dim lstWeapons As ListBox = CType(tpWeapon.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstWeapons"), ListBox)
 
-                ' Loop through the items in the ListBox and add them to the JArray
                 For Each weapon As String In lstWeapons.Items
                     weaponsPool.Add("REF:MurderWeaponsPool|" & weapon)
                 Next
@@ -398,10 +366,9 @@ Public Class Form1
         Next
         defaultCase("weaponsPool") = weaponsPool
 
-        ' Update murdererJobModifiers
         Dim jobModifiers As New JArray()
         For Each tpJobModifier As TabPage In tabControlCase.TabPages
-            If tpJobModifier.Text.StartsWith("Murderer Job Modifier") Then ' Check for Job Modifiers tabs
+            If tpJobModifier.Text.StartsWith("Murderer Job Modifier") Then
                 Dim jobModifierEntry As New JObject From {
             {"jobs", New JArray(CType(tpJobModifier.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstJobs"), ListBox).Items.Cast(Of String)().Select(Function(item) "REF:OccupationPreset|" & item).ToArray())},
             {"jobBoost", CInt(CType(tpJobModifier.Controls.OfType(Of NumericUpDown).First(Function(x) x.Name = "numJobBoost"), NumericUpDown).Value)},
@@ -413,10 +380,9 @@ Public Class Form1
         Next
         defaultCase("murdererJobModifiers") = jobModifiers
 
-        ' Update victimJobModifiers
         Dim victimJobModifiers As New JArray()
         For Each tpVictimJobModifier As TabPage In tabControlCase.TabPages
-            If tpVictimJobModifier.Text.StartsWith("Victim Job Modifier") Then ' Check for Job Modifiers tabs
+            If tpVictimJobModifier.Text.StartsWith("Victim Job Modifier") Then
                 Dim jobModifierEntry As New JObject From {
             {"jobs", New JArray(CType(tpVictimJobModifier.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstJobs"), ListBox).Items.Cast(Of String)().Select(Function(item) "REF:OccupationPreset|" & item).ToArray())},
             {"jobBoost", CInt(CType(tpVictimJobModifier.Controls.OfType(Of NumericUpDown).First(Function(x) x.Name = "numJobBoost"), NumericUpDown).Value)},
@@ -428,10 +394,9 @@ Public Class Form1
         Next
         defaultCase("victimJobModifiers") = victimJobModifiers
 
-        ' Update murdererCompanyModifiers
         Dim companyModifiers As New JArray()
         For Each tpCompanyModifier As TabPage In tabControlCase.TabPages
-            If tpCompanyModifier.Text.StartsWith("Murderer Company Modifiers") Then ' Check for Company Modifiers tabs
+            If tpCompanyModifier.Text.StartsWith("Murderer Company Modifiers") Then
                 Dim companyModifierEntry As New JObject From {
             {"companies", New JArray(CType(tpCompanyModifier.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstCompanies"), ListBox).Items.Cast(Of String)().Select(Function(item) "REF:CompanyPreset|" & item).ToArray())},
             {"minimumEmployees", CInt(CType(tpCompanyModifier.Controls.OfType(Of NumericUpDown).First(Function(x) x.Name = "nudMinimumEmployees"), NumericUpDown).Value)},
@@ -445,10 +410,9 @@ Public Class Form1
         Next
         defaultCase("murdererCompanyModifiers") = companyModifiers
 
-        ' Update victimCompanyModifiers
         Dim victimCompanyModifiers As New JArray()
         For Each tpVictimCompanyModifier As TabPage In tabControlCase.TabPages
-            If tpVictimCompanyModifier.Text.StartsWith("Victim Company Modifiers") Then ' Check for Company Modifiers tabs
+            If tpVictimCompanyModifier.Text.StartsWith("Victim Company Modifiers") Then
                 Dim victimCompanyModifierEntry As New JObject From {
             {"companies", New JArray(CType(tpVictimCompanyModifier.Controls.OfType(Of ListBox).First(Function(x) x.Name = "lstCompanies"), ListBox).Items.Cast(Of String)().Select(Function(item) "REF:CompanyPreset|" & item).ToArray())},
             {"minimumEmployees", CInt(CType(tpVictimCompanyModifier.Controls.OfType(Of NumericUpDown).First(Function(x) x.Name = "nudMinimumEmployees"), NumericUpDown).Value)},
@@ -462,7 +426,6 @@ Public Class Form1
         Next
         defaultCase("victimCompanyModifiers") = victimCompanyModifiers
 
-        ' Update dds confessions
         Dim ddsConfessionals As New JArray()
         For Each tpDDSConfessionals As TabPage In tabControlCase.TabPages
             If tpDDSConfessionals.Text.StartsWith("Confessional DDS") Then
@@ -476,7 +439,6 @@ Public Class Form1
 
         defaultCase("confessionalDDSResponses") = ddsConfessionals
 
-        ' Update Graffiti
         Dim killerGraffiti As New JArray()
         For Each tpKillerGraffiti As TabPage In tabControlCase.TabPages
             If tpKillerGraffiti.Text.StartsWith("Graffiti Entry") Then
@@ -495,7 +457,6 @@ Public Class Form1
         Next
         defaultCase("graffiti") = killerGraffiti
 
-        ' Update playerTaunts
         Dim playerTaunts As New JArray()
         For Each tpPlayerTaunts As TabPage In tabControlCase.TabPages
             If tpPlayerTaunts.Text.StartsWith("Player Taunts") Then
@@ -509,7 +470,6 @@ Public Class Form1
 
         defaultCase("playerTaunts") = playerTaunts
 
-        ' Update locations
         Dim locationsTab As TabPage = tabControlCase.TabPages.Cast(Of TabPage)().FirstOrDefault(Function(tab) tab.Text = "Locations")
 
         If locationsTab IsNot Nothing Then
@@ -520,14 +480,11 @@ Public Class Form1
             defaultCase("allowStreets") = GetComboBoxValue(locationsTab, "cmbStreets")
             defaultCase("allowDen") = GetComboBoxValue(locationsTab, "cmbDen")
         Else
-            ' Handle the case where the Locations tab is not found
             MessageBox.Show("Locations tab not found!")
         End If
 
-        ' Serialize the final merged object to JSON
         Dim jsonOutput As String = defaultCase.ToString(Formatting.Indented)
 
-        ' Display the JSON output in the text box
         txtOutput.Text = jsonOutput
 
         If My.Settings.isRemoveKeysEnabled = True Then
@@ -544,7 +501,6 @@ Public Class Form1
         End If
         previousOutput = currentOutput
 
-        ' Create and display the additional JSON string in txtManiOutput
         Dim maniOutput As New With {
             .enabled = True,
             .fileOrder = New List(Of String) From {"REF:" + txtPresetName.Text.ToLower()},
@@ -573,7 +529,7 @@ Public Class Form1
         If comboBox IsNot Nothing AndAlso comboBox.SelectedItem IsNot Nothing Then
             Return comboBox.SelectedItem.ToString() = "true"
         End If
-        Return False ' Default value if the ComboBox is not found or no item is selected
+        Return False
     End Function
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles btnAllowedWeapons.Click
         If weaponTabOpen = False Then
@@ -585,10 +541,8 @@ Public Class Form1
         End If
     End Sub
     Private Sub SetupLocationControls()
-        ' Clear existing tabs to ensure only one tab is open
         tabControlCase.TabPages.Clear()
 
-        ' Create a new tab for locations
         Dim locationsTab As New TabPage()
         locationsTab.Text = "Locations"
 
@@ -596,40 +550,34 @@ Public Class Form1
         Dim locationOptions As String() = {"true", "false"}
 
         For i As Integer = 0 To labels.Length - 1
-            ' Create a new label
             Dim lbl As New Label()
             lbl.Text = labels(i)
             lbl.AutoSize = True
 
-            ' Create a new ComboBox
             Dim cmb As New ComboBox()
             cmb.Name = "cmb" & labels(i)
             cmb.DropDownStyle = ComboBoxStyle.DropDownList
             cmb.Items.AddRange(locationOptions)
-            cmb.SelectedIndex = 1 ' Set default to false
+            cmb.SelectedIndex = 1
 
             If cmb.Name = "cmbHome" Then
-                cmb.SelectedIndex = 0  ' Set home to true by default
+                cmb.SelectedIndex = 0
             End If
 
-            ' Set position for first three in the left column
             If i < 3 Then
                 lbl.Location = New Point(0, 23 + (i * 30))
                 cmb.Location = New Point(80, 20 + (i * 30))
-            Else ' Set position for last three in the right column
+            Else
                 lbl.Location = New Point(225, 23 + ((i - 3) * 30))
                 cmb.Location = New Point(305, 20 + ((i - 3) * 30))
             End If
 
-            ' Add the controls to the new tab page
             locationsTab.Controls.Add(lbl)
             locationsTab.Controls.Add(cmb)
         Next
 
-        ' Add the new tab page to the tab control
         tabControlCase.TabPages.Add(locationsTab)
 
-        ' Optionally, set the new tab as the selected tab
         tabControlCase.SelectedTab = locationsTab
     End Sub
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -672,13 +620,11 @@ Public Class Form1
         For Each defaultProperty As JProperty In defaultJson.Properties()
             Dim loadedProperty As JToken = loadedJsonData(defaultProperty.Name)
 
-            ' If the property exists in loadedJson, overwrite defaultJson with loadedJson value
             If loadedProperty IsNot Nothing Then
                 defaultProperty.Value = loadedProperty
             End If
         Next
 
-        ' Now add any properties from defaultJson that do not exist in loadedJson
         For Each defaultProperty As JProperty In defaultJson.Properties()
             If loadedJsonData(defaultProperty.Name) Is Nothing Then
                 loadedJsonData.Add(defaultProperty.Name, defaultProperty.Value)
@@ -690,9 +636,6 @@ Public Class Form1
             ClearSpecificTabs()
             Dim jsonContent As String = File.ReadAllText(filePath)
             Dim jsonData As JObject = JObject.Parse(jsonContent)
-            ' =============================
-            ' Load Main And Singular Values
-            ' =============================
             txtPresetName.Text = If(jsonData("presetName") IsNot Nothing AndAlso Not String.IsNullOrEmpty(jsonData("presetName").ToString()),
             jsonData("presetName").ToString(),
             If(jsonData("name") IsNot Nothing AndAlso Not String.IsNullOrEmpty(jsonData("name").ToString()),
@@ -726,13 +669,11 @@ Public Class Form1
                     copyFromString = copyFromString.Replace("REF:MurderMO|", "")
                     cmbCopyFromMain.SelectedItem = copyFromString
                 End If
-                ' If the item is not in the ComboBox, add it and set the Text
                 If cmbCopyFromMain.SelectedItem Is Nothing Then
                     cmbCopyFromMain.Text = jsonData("copyFrom").ToString()
                     cmbCopyFromMain.Items.Add(jsonData("copyFrom").ToString())
                 End If
             Else
-                ' If jsonData("copyFrom") is null or JTokenType.Null, set the selected index to 0 ("null" option)
                 cmbCopyFromMain.SelectedIndex = 0
             End If
 
@@ -762,9 +703,6 @@ Public Class Form1
             nudVictimCrY.Value = If(jsonData("victimClassRange")?("y") IsNot Nothing, CInt(jsonData("victimClassRange")("y").ToObject(Of Decimal)()), 0)
             nudVictimCRBoost.Value = If(jsonData("victimClassRangeBoost") IsNot Nothing, CInt(jsonData("victimClassRangeBoost").ToObject(Of Decimal)()), 0)
 
-            ' ===================
-            ' Load Hexaco tab
-            ' ===================
             hexacoTabOpen = False
             Dim tpHexaco As TabPage = tabControlCase.TabPages.OfType(Of TabPage)().FirstOrDefault(Function(tp) tp.Text.StartsWith("Hexaco Modifiers"))
             If tpHexaco Is Nothing AndAlso jsonData.ContainsKey("hexaco") AndAlso cmbUseHexaco.SelectedItem = "true" Then
@@ -773,18 +711,12 @@ Public Class Form1
                 Dim hexacoData As JObject = jsonData("hexaco")
                 LoadHexacoData(tpHexaco, hexacoData)
             End If
-            ' ===================
-            ' Load Locations
-            ' ===================
             CType(tabControlCase.TabPages(0).Controls("cmbAnywhere"), ComboBox).SelectedItem = If(ConvertToBool(jsonData("allowAnywhere")), "true", "false")
             CType(tabControlCase.TabPages(0).Controls("cmbHome"), ComboBox).SelectedItem = If(ConvertToBool(jsonData("allowHome")), "true", "false")
             CType(tabControlCase.TabPages(0).Controls("cmbWork"), ComboBox).SelectedItem = If(ConvertToBool(jsonData("allowWork")), "true", "false")
             CType(tabControlCase.TabPages(0).Controls("cmbPublic"), ComboBox).SelectedItem = If(ConvertToBool(jsonData("allowPublic")), "true", "false")
             CType(tabControlCase.TabPages(0).Controls("cmbStreets"), ComboBox).SelectedItem = If(ConvertToBool(jsonData("allowStreets")), "true", "false")
             CType(tabControlCase.TabPages(0).Controls("cmbDen"), ComboBox).SelectedItem = If(ConvertToBool(jsonData("allowDen")), "true", "false")
-            ' ===================
-            ' Load Weapon tabs
-            ' ===================
             weaponTabOpen = False
             If jsonData("weaponsPool") IsNot Nothing Then
                 Dim weaponsData As JArray = jsonData("weaponsPool")
@@ -810,9 +742,6 @@ Public Class Form1
                     Next
                 End If
             End If
-            ' ===========================
-            ' Load Murderer Trait Modifiers
-            ' ===========================
             murdererTraitEntryCount = 0
             For Each traitModifierEntry In jsonData("murdererTraitModifiers")
                 Dim tpTraitModifiers As TabPage = CreateMurdererTraitModifiersTab()
@@ -820,29 +749,20 @@ Public Class Form1
 
                 tabControlCase.TabPages.Add(tpTraitModifiers)
             Next
-            ' ===========================
-            ' Load Murderer Job Modifiers
-            ' ===========================
             murdererJobModifierEntryCount = 0
             For Each jobModifierEntry In jsonData("murdererJobModifiers")
-                Dim tpJobModifier As TabPage = CreateMurdererJobModifierTab() ' Create a new Job Modifier tab
-                LoadMurdererJobModifierTab(jobModifierEntry, tpJobModifier) ' Load the data into the tab
+                Dim tpJobModifier As TabPage = CreateMurdererJobModifierTab()
+                LoadMurdererJobModifierTab(jobModifierEntry, tpJobModifier)
 
-                tabControlCase.TabPages.Add(tpJobModifier) ' Add the tab to the control
+                tabControlCase.TabPages.Add(tpJobModifier)
             Next
-            ' ===========================
-            ' Load Murderer Company Modifiers
-            ' ===========================
             murdererCompanyModifierEntryCount = 0
             For Each companyModifierEntry In jsonData("murdererCompanyModifiers")
-                Dim tpCompanyModifier As TabPage = CreateMurdererCompanyModifierTab() ' Create a new Job Modifier tab
-                LoadMurdererCompanyModifierTab(companyModifierEntry, tpCompanyModifier) ' Load the data into the tab
+                Dim tpCompanyModifier As TabPage = CreateMurdererCompanyModifierTab()
+                LoadMurdererCompanyModifierTab(companyModifierEntry, tpCompanyModifier)
 
-                tabControlCase.TabPages.Add(tpCompanyModifier) ' Add the tab to the control
+                tabControlCase.TabPages.Add(tpCompanyModifier)
             Next
-            ' ===========================
-            ' Load Victim Trait Modifiers
-            ' ===========================
             victimTraitEntryCount = 0
             For Each victimTraitModifierEntry In jsonData("victimTraitModifiers")
                 Dim tpVictimTraitModifiers As TabPage = CreateVictimTraitModifiersTab()
@@ -850,29 +770,20 @@ Public Class Form1
 
                 tabControlCase.TabPages.Add(tpVictimTraitModifiers)
             Next
-            ' ===========================
-            ' Load Victim Job Modifiers
-            ' ===========================
             victimJobModifierEntryCount = 0
             For Each victimJobModifierEntry In jsonData("victimJobModifiers")
-                Dim tpVictimJobModifier As TabPage = CreateVictimJobModifierTab() ' Create a new Job Modifier tab
-                LoadVictimJobModifierTab(victimJobModifierEntry, tpVictimJobModifier) ' Load the data into the tab
+                Dim tpVictimJobModifier As TabPage = CreateVictimJobModifierTab()
+                LoadVictimJobModifierTab(victimJobModifierEntry, tpVictimJobModifier)
 
-                tabControlCase.TabPages.Add(tpVictimJobModifier) ' Add the tab to the control
+                tabControlCase.TabPages.Add(tpVictimJobModifier)
             Next
-            ' ===========================
-            ' Load Victim Company Modifiers
-            ' ===========================
             victimCompanyModifierEntryCount = 0
             For Each VictimCompanyModifierEntry In jsonData("victimCompanyModifiers")
-                Dim tpVictimCompanyModifier As TabPage = CreateVictimCompanyModifierTab() ' Create a new Job Modifier tab
-                LoadVictimCompanyModifierTab(VictimCompanyModifierEntry, tpVictimCompanyModifier) ' Load the data into the tab
+                Dim tpVictimCompanyModifier As TabPage = CreateVictimCompanyModifierTab()
+                LoadVictimCompanyModifierTab(VictimCompanyModifierEntry, tpVictimCompanyModifier)
 
-                tabControlCase.TabPages.Add(tpVictimCompanyModifier) ' Add the tab to the control
+                tabControlCase.TabPages.Add(tpVictimCompanyModifier)
             Next
-            ' ===========================
-            ' Load DDS Confessionals
-            ' ===========================
             ddsConfessionalTabOpen = False
             Dim ddsConfData As JArray = jsonData("confessionalDDSResponses")
             If ddsConfData.Count >= 1 Then
@@ -880,9 +791,6 @@ Public Class Form1
                 LoadDDSConfessionalTab(jsonData, tpDDSConfessional)
                 tabControlCase.TabPages.Add(tpDDSConfessional)
             End If
-            ' ===================
-            ' Load MOlead tabs
-            ' ===================
             moleadEntryCount = 0
             setTabValueMO = 0
             Dim traitMOLeadModifierTabCount As Integer = 0
@@ -908,9 +816,6 @@ Public Class Form1
                     End If
                 End If
             Next
-            ' ==========================
-            ' Load Graffiti tabs
-            ' ==========================
             graffitiEntryCount = 0
             For Each graffitiEntry In jsonData("graffiti")
                 Dim tpGraffiti As TabPage = CreateGraffitiTab()
@@ -918,9 +823,6 @@ Public Class Form1
 
                 tabControlCase.TabPages.Add(tpGraffiti)
             Next
-            ' ==========================
-            ' Load Calling Cards tabs
-            ' ==========================
             callingcardEntryCount = 0
             setTabValueCC = 0
             Dim traitModifierTabCount As Integer = 0
@@ -935,7 +837,6 @@ Public Class Form1
                 Dim innerTabControl As TabControl = CType(tpCallingCard.Controls("innerTabControl" & callingcardEntryCount), TabControl)
 
                 If innerTabControl IsNot Nothing Then
-                    ' Load traitModifiers or other relevant nested values
                     Dim traitModifiers As JArray = CType(cardEntry("traitModifiers"), JArray)
 
                     For Each traitModifier In traitModifiers
@@ -945,9 +846,6 @@ Public Class Form1
                     Next
                 End If
             Next
-            ' ===========================
-            ' Load Player Taunts
-            ' ===========================
             playerTauntTabOpen = False
             Dim tauntData As JArray = jsonData("playerTaunts")
             If tauntData.Count >= 1 Then
@@ -963,14 +861,12 @@ Public Class Form1
     Private Sub ClearSpecificTabs()
         Dim tabsToRemove As New List(Of TabPage)
 
-        ' Loop through the TabControl and find the tabs to remove (all except "Locations")
         For Each tab As TabPage In tabControlCase.TabPages
             If tab.Text <> "Locations" Then
                 tabsToRemove.Add(tab)
             End If
         Next
 
-        ' Remove the selected tabs
         For Each tab As TabPage In tabsToRemove
             tabControlCase.TabPages.Remove(tab)
         Next
@@ -978,7 +874,7 @@ Public Class Form1
     Private Sub SetComboBoxText(cb As ComboBox, jsonValue As JToken)
         If cb Is Nothing Then
             MessageBox.Show("Can't find ComboBox for " & jsonValue.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            Return ' Exit the method if cb is Nothing
+            Return
         End If
 
         If jsonValue IsNot Nothing AndAlso Not jsonValue.Type = JTokenType.Null Then
@@ -996,8 +892,7 @@ Public Class Form1
         End If
     End Sub
     Private Sub LoadCallingCardTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Calling Card Entry " & entryIndex
 
 
@@ -1020,21 +915,16 @@ Public Class Form1
             cbItem.SelectedIndex = 0
         End If
 
-        ' Origin ComboBox
         Dim cbOrigin As ComboBox = CType(tabPage.Controls("cbOrigin"), ComboBox)
         SetComboBoxValue(cbOrigin, jsonData("origin"))
 
-        ' Random Score Range X
         Dim txtRandomScoreX As TextBox = CType(tabPage.Controls("txtRandomScoreX"), TextBox)
         txtRandomScoreX.Text = If(jsonData("randomScoreRange")?("x")?.ToString(), String.Empty)
 
-        ' Random Score Range Y
         Dim txtRandomScoreY As TextBox = CType(tabPage.Controls("txtRandomScoreY"), TextBox)
         txtRandomScoreY.Text = If(jsonData("randomScoreRange")?("y")?.ToString(), String.Empty)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -1058,8 +948,6 @@ Public Class Form1
         Dim tpCallingCard As New TabPage
         tpCallingCard.Text = "Calling Card Entry " & callingcardEntryCount
 
-        ' Add controls for each input (similar to your original code)
-        ' Item Label and ComboBox
         Dim itemLabel As New Label
         itemLabel.Text = "Item"
         itemLabel.Top = 23
@@ -1081,7 +969,6 @@ Public Class Form1
         cbItem.SelectedIndex = 0
         tpCallingCard.Controls.Add(cbItem)
 
-        ' Origin Label and ComboBox
         Dim originLabel As New Label
         originLabel.Text = "Origin"
         originLabel.Top = 53
@@ -1102,7 +989,6 @@ Public Class Form1
         cbOrigin.SelectedIndex = 0
         tpCallingCard.Controls.Add(cbOrigin)
 
-        ' Random Score Range X and Y
         Dim randomScoreXLabel As New Label
         randomScoreXLabel.Text = "Random Score X/Y"
         randomScoreXLabel.Top = 83
@@ -1126,7 +1012,6 @@ Public Class Form1
         txtRandomScoreY.Width = 20
         tpCallingCard.Controls.Add(txtRandomScoreY)
 
-        ' Copy From Label and ComboBox
         Dim copyFromLabel As New Label
         copyFromLabel.Text = "Copy From"
         copyFromLabel.Top = 113
@@ -1147,7 +1032,6 @@ Public Class Form1
         cbCopyFrom.SelectedIndex = 0
         tpCallingCard.Controls.Add(cbCopyFrom)
 
-        ' Add Remove Button
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -1186,23 +1070,20 @@ Public Class Form1
                                                   innerTabControl.TabPages.Add(tpTraitModifier)
                                               End Sub
 
-        tpCallingCard.Controls.Add(btnAddTraitModifier) ' Add the button to the tab page
+        tpCallingCard.Controls.Add(btnAddTraitModifier)
 
         Return tpCallingCard
     End Function
     Private Function CreateTraitModifierTab(traitModifierTabCount, thisCCValue) As TabPage
-        ' Define the dropdown options for "rule" and "mustPassForApplication"
         Dim ruleOptions As String() = {"ifAnyOfThese", "ifAllOfThese", "ifNoneOfThese", "ifPartnerAnyOfThese"}
         Dim booleanOptions As String() = {"false", "true"}
 
-        ' Create a new TabPage for Trait Modifier
         Dim newTab As New TabPage
         newTab.Text = "Trait Modifier Tab " & traitModifierTabCount
         newTab.Name = "traitModifierTab" & traitModifierTabCount
 
         Dim innerTabControl As TabControl = FindControlRecursive(Of TabControl)(tabControlCase, Function(tc) tc.Name.Equals("innerTabControl" & thisCCValue))
 
-        ' Rule ComboBox (Dropdown)
         Dim cbRule As New ComboBox
         cbRule.Name = "cbRule"
         cbRule.Top = 20
@@ -1214,7 +1095,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Rule", .Top = 23, .Left = 230, .Width = 30})
         newTab.Controls.Add(cbRule)
 
-        ' Trait List ComboBox and ListBox
         Dim cbTraitList As New ComboBox
         cbTraitList.Top = 60
         cbTraitList.Left = 20
@@ -1228,7 +1108,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Trait List", .Top = 63, .Left = 230})
         newTab.Controls.Add(cbTraitList)
 
-        ' ListBox to hold selected traits
         Dim lbTraitList As New ListBox
         lbTraitList.Name = "lbTraitList"
         lbTraitList.Top = 100
@@ -1236,7 +1115,6 @@ Public Class Form1
         lbTraitList.Width = 200
         newTab.Controls.Add(lbTraitList)
 
-        ' Add Button for Trait List
         Dim btnAddTrait As New Button
         btnAddTrait.Text = "Add Trait"
         btnAddTrait.Top = 140
@@ -1250,7 +1128,6 @@ Public Class Form1
                                       End Sub
         newTab.Controls.Add(btnAddTrait)
 
-        ' Remove Button for Trait List
         Dim btnRemoveTrait As New Button
         btnRemoveTrait.Text = "Remove Trait"
         btnRemoveTrait.Top = 165
@@ -1262,7 +1139,6 @@ Public Class Form1
                                          End Sub
         newTab.Controls.Add(btnRemoveTrait)
 
-        ' mustPassForApplication ComboBox (True/False)
         Dim cbMustPassForApplication As New ComboBox
         cbMustPassForApplication.Name = "cbMustPassForApplication"
         cbMustPassForApplication.Top = 215
@@ -1270,11 +1146,10 @@ Public Class Form1
         cbMustPassForApplication.Width = 200
         cbMustPassForApplication.Items.AddRange(booleanOptions)
         cbMustPassForApplication.DropDownStyle = ComboBoxStyle.DropDownList
-        cbMustPassForApplication.SelectedItem = "false" ' Default value
+        cbMustPassForApplication.SelectedItem = "false"
         newTab.Controls.Add(New Label With {.Text = "Must Pass For Application", .Top = 218, .Left = 230, .Width = 250})
         newTab.Controls.Add(cbMustPassForApplication)
 
-        ' Score Modifier NumericUpDown
         Dim nudScoreModifier As New NumericUpDown
         nudScoreModifier.Name = "nudScoreModifier"
         nudScoreModifier.Top = 245
@@ -1285,7 +1160,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Score Modifier", .Top = 248, .Left = 230})
         newTab.Controls.Add(nudScoreModifier)
 
-        ' Copy From ComboBox (with null as the default value)
         Dim cbCopyFromTraitModifier As New ComboBox
         cbCopyFromTraitModifier.Name = "cbCopyFrom"
         cbCopyFromTraitModifier.Top = 275
@@ -1297,11 +1171,10 @@ Public Class Form1
             cbCopyFromTraitModifier.Items.Add(item.Trim())
         Next
         cbCopyFromTraitModifier.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFromTraitModifier.SelectedItem = "null" ' Default value
+        cbCopyFromTraitModifier.SelectedItem = "null"
         newTab.Controls.Add(New Label With {.Text = "Copy From", .Top = 278, .Left = 230})
         newTab.Controls.Add(cbCopyFromTraitModifier)
 
-        ' Remove Modifier Button
         Dim btnRemoveTraitModifier As New Button
         btnRemoveTraitModifier.Text = "Remove Modifier"
         btnRemoveTraitModifier.Top = 20
@@ -1324,8 +1197,7 @@ Public Class Form1
         Return newTab
     End Function
     Private Sub LoadTraitModifierTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Trait Modifier Tab " & entryIndex
 
         Dim cbRule As ComboBox = CType(tabPage.Controls("cbRule"), ComboBox)
@@ -1341,7 +1213,6 @@ Public Class Form1
             cbRule.Items.Add(ruleValue)
         End If
 
-        'traits
         Dim lstTraits As ListBox = CType(tabPage.Controls("lbTraitList"), ListBox)
         lstTraits.Items.Clear()
 
@@ -1349,26 +1220,21 @@ Public Class Form1
             If TypeOf trait Is JValue Then
                 Dim traitName As String = trait.ToString()
 
-                ' Remove the prefix if it exists
                 If traitName.StartsWith("REF:CharacterTrait|") Then
-                    traitName = traitName.Replace("REF:CharacterTrait|", "") ' Remove "REF:" prefix
+                    traitName = traitName.Replace("REF:CharacterTrait|", "")
                 End If
 
                 lstTraits.Items.Add(traitName)
             End If
         Next
 
-        ' Must Pass For Application ComboBox
         Dim cbMustPassForApplication As ComboBox = CType(tabPage.Controls("cbMustPassForApplication"), ComboBox)
         SetComboBoxValue(cbMustPassForApplication, jsonData("mustPassForApplication"))
 
-        ' Score Modifier NumericUpDown
         Dim nudScoreModifier As NumericUpDown = CType(tabPage.Controls("nudScoreModifier"), NumericUpDown)
-        nudScoreModifier.Value = If(jsonData("scoreModifier")?.ToObject(Of Decimal?), Nothing) ' Set value directly
+        nudScoreModifier.Value = If(jsonData("scoreModifier")?.ToObject(Of Decimal?), Nothing)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -1388,73 +1254,55 @@ Public Class Form1
     End Sub
     Private Sub LoadMOleadTab(jsonData As JObject, tabPage As TabPage)
         Dim tpPanel As Panel = tabPage.Controls("pnLeads" & moleadEntryCount)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "MOlead Entry " & entryIndex
 
-        ' Name TextBox
         Dim txtName As TextBox = CType(tpPanel.Controls("txtName"), TextBox)
         txtName.Text = If(jsonData("name")?.ToString(), String.Empty)
 
-        ' All Motives ComboBox
         Dim cbAllMotives As ComboBox = CType(tpPanel.Controls("cbAllMotives"), ComboBox)
         cbAllMotives.SelectedItem = If(ConvertToBool(jsonData("compatibleWithAllMotives")), "true", "false")
 
-        ' UseTraits
         Dim cbUseTraits As ComboBox = CType(tpPanel.Controls("cbUseTraits"), ComboBox)
         cbUseTraits.SelectedItem = If(ConvertToBool(jsonData("useTraits")), "true", "false")
 
-        ' UseIf
         Dim cbUseIf As ComboBox = CType(tpPanel.Controls("cbUseIf"), ComboBox)
         cbUseIf.SelectedItem = If(ConvertToBool(jsonData("useIf")), "true", "false")
 
-        ' IfTag
         Dim cbIfTag As ComboBox = CType(tpPanel.Controls("cbIfTag"), ComboBox)
         SetComboBoxValue(cbIfTag, jsonData("ifTag"))
 
-        ' UseOrGroup
         Dim cbUseOrGroup As ComboBox = CType(tpPanel.Controls("cbUseOrGroup"), ComboBox)
         cbUseOrGroup.SelectedItem = If(ConvertToBool(jsonData("useOrGroup")), "true", "false")
 
-        ' OrGroup
         Dim cbOrGroup As ComboBox = CType(tpPanel.Controls("cbOrGroup"), ComboBox)
         SetComboBoxValue(cbOrGroup, jsonData("orGroup"))
 
-        ' ChanceRatio TextBox
         Dim txtChanceRatio As TextBox = CType(tpPanel.Controls("txtChanceRatio"), TextBox)
         txtChanceRatio.Text = If(jsonData("chanceRatio")?.ToString(), String.Empty)
 
-        ' Vmail Progress Threshold X
         Dim txtVmailProgressX As TextBox = CType(tpPanel.Controls("txtVmailProgressX"), TextBox)
         txtVmailProgressX.Text = If(jsonData("vmailProgressThreshold")?("x")?.ToString(), String.Empty)
 
-        ' Vmail Progress Threshold X
         Dim txtVmailProgressY As TextBox = CType(tpPanel.Controls("txtVmailProgressY"), TextBox)
         txtVmailProgressY.Text = If(jsonData("vmailProgressThreshold")?("y")?.ToString(), String.Empty)
 
-        ' ItemTag
         Dim cbItemTag As ComboBox = CType(tpPanel.Controls("cbItemTag"), ComboBox)
         SetComboBoxValue(cbItemTag, jsonData("itemTag"))
 
-        ' Spawn Phase ComboBox
         Dim cbSpawnPhase As ComboBox = CType(tpPanel.Controls("cbSpawnPhase"), ComboBox)
         SetComboBoxValue(cbSpawnPhase, jsonData("spawnOnPhase"))
 
-        ' Spawn Each Murder ComboBox
         Dim cbSpawnEachMurder As ComboBox = CType(tpPanel.Controls("cbSpawnEachMurder"), ComboBox)
         cbSpawnEachMurder.SelectedItem = If(ConvertToBool(jsonData("tryToSpawnWithEachNewMurder")), "true", "false")
 
-        ' Belongs To ComboBox
         Dim cbBelongsTo As ComboBox = CType(tpPanel.Controls("cbBelongsTo"), ComboBox)
         SetComboBoxValue(cbBelongsTo, jsonData("belongsTo"))
 
-        ' Chance TextBox
         Dim txtChance As TextBox = CType(tpPanel.Controls("txtChance"), TextBox)
         txtChance.Text = If(jsonData("chance")?.ToString(), String.Empty)
 
-        ' Item ComboBox (set text directly)
         Dim cbSpawnItem As ComboBox = CType(tpPanel.Controls("cbSpawnItem"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         Dim cbSpawnItemValue As String = jsonData("spawnItem").ToString()
         If cbSpawnItemValue.StartsWith("REF:InteractablePreset|") Then
             cbSpawnItemValue = cbSpawnItemValue.Replace("REF:InteractablePreset|", "")
@@ -1468,13 +1316,11 @@ Public Class Form1
             cbSpawnItem.SelectedIndex = 0
         End If
 
-        ' VMail Thread TextBox
         Dim txtVmail As TextBox = CType(tpPanel.Controls("txtVmail"), TextBox)
         txtVmail.Text = If(jsonData("vmailThread")?.ToString(), String.Empty)
 
-        ' Vmail Other List
         Dim lstVmailOther As ListBox = CType(tpPanel.Controls("lbVmailOthers"), ListBox)
-        lstVmailOther.Items.Clear() ' Clear existing items
+        lstVmailOther.Items.Clear()
 
         For Each other As JToken In jsonData("vmailOtherParticipants")
             Dim otherMO As String = other.ToString()
@@ -1484,33 +1330,26 @@ Public Class Form1
             lstVmailOther.Items.Add(otherMO)
         Next
 
-        ' Writer ComboBox
         Dim cbWriter As ComboBox = CType(tpPanel.Controls("cbWriter"), ComboBox)
         SetComboBoxValue(cbWriter, jsonData("writer"))
 
-        ' Receiver ComboBox
         Dim cbReceiver As ComboBox = CType(tpPanel.Controls("cbReceiver"), ComboBox)
         SetComboBoxValue(cbReceiver, jsonData("receiver"))
 
-        ' Where ComboBox
         Dim cbWhere As ComboBox = CType(tpPanel.Controls("cbWhere"), ComboBox)
         SetComboBoxValue(cbWhere, jsonData("where"))
 
-        ' Security TextBox
         Dim txtSecurity As TextBox = CType(tpPanel.Controls("txtSecurity"), TextBox)
         txtSecurity.Text = If(jsonData("security")?.ToString(), String.Empty)
 
-        ' Priority TextBox
         Dim txtPriority As TextBox = CType(tpPanel.Controls("txtPriority"), TextBox)
         txtPriority.Text = If(jsonData("priority")?.ToString(), String.Empty)
 
-        ' Ownership Rule ComboBox
         Dim cbOwnershipRule As ComboBox = CType(tpPanel.Controls("cbOwnershipRule"), ComboBox)
         SetComboBoxValue(cbOwnershipRule, jsonData("ownershipRule"))
 
-        ' Compatible With ListBox
         Dim lstMotives As ListBox = CType(tpPanel.Controls("lbMotives"), ListBox)
-        lstMotives.Items.Clear() ' Clear existing items
+        lstMotives.Items.Clear()
 
         For Each motive As JToken In jsonData("compatibleWithMotives")
             Dim motiveString As String = motive.ToString()
@@ -1560,9 +1399,8 @@ Public Class Form1
             If TypeOf trait Is JValue Then
                 Dim traitName As String = trait.ToString()
 
-                ' Remove the prefix if it exists
                 If traitName.StartsWith("REF:CharacterTrait|") Then
-                    traitName = traitName.Replace("REF:CharacterTrait|", "") ' Remove "REF:" prefix
+                    traitName = traitName.Replace("REF:CharacterTrait|", "")
                 End If
 
                 lstTraits.Items.Add(traitName)
@@ -1577,9 +1415,7 @@ Public Class Form1
         Dim numScoreModifier As NumericUpDown = CType(tabPage.Controls("nudScoreModifier"), NumericUpDown)
         numScoreModifier.Value = If(jsonData("chanceModifier") IsNot Nothing, CInt(jsonData("chanceModifier").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -1606,18 +1442,16 @@ Public Class Form1
         tpMOlead.Tag = "MOLEADNO:" & thisTabValue
         Dim alphabetList As Array = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
 
-        ' Create a Panel
         Dim scrollablePanel As New Panel()
         scrollablePanel.Name = "pnLeads" & moleadEntryCount
-        scrollablePanel.AutoScroll = True ' Enable scroll
-        scrollablePanel.Size = New Size(460, 587) ' Set size
-        scrollablePanel.Location = New Point(0, 0) ' Set location
+        scrollablePanel.AutoScroll = True
+        scrollablePanel.Size = New Size(460, 587)
+        scrollablePanel.Location = New Point(0, 0)
         scrollablePanel.BackColor = SystemColors.HighlightText
         scrollablePanel.AutoScrollMargin = New Size(20, 20)
         tpMOlead.Controls.Add(scrollablePanel)
 
 
-        ' Add controls for each input
         Dim nameLabel As New Label
         nameLabel.Text = "Name"
         nameLabel.Name = "lblName"
@@ -1734,7 +1568,6 @@ Public Class Form1
         cbUseTraits.SelectedIndex = 1
         scrollablePanel.Controls.Add(cbUseTraits)
 
-        ' Create a Tab
         Dim innerTabControlMO As New TabControl()
         innerTabControlMO.Name = "innerTabControlMO" & moleadEntryCount
         innerTabControlMO.Top = 880
@@ -2069,7 +1902,6 @@ Public Class Form1
         cbOwnershipRule.SelectedIndex = 0
         scrollablePanel.Controls.Add(cbOwnershipRule)
 
-        ' Add the Remove button
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -2090,7 +1922,6 @@ Public Class Form1
                                     End Sub
         scrollablePanel.Controls.Add(btnRemove)
 
-        ' New ComboBox for "Compatible With Motives"
         Dim compatibleWithLabel As New Label
         compatibleWithLabel.Text = "Compatible With Motives"
         compatibleWithLabel.Top = 793
@@ -2111,7 +1942,6 @@ Public Class Form1
         cbCompatibleWith.SelectedIndex = 0
         scrollablePanel.Controls.Add(cbCompatibleWith)
 
-        ' New ListBox for adding and removing items
         Dim lbMotives As New ListBox
         lbMotives.Top = 820
         lbMotives.Left = 0
@@ -2153,7 +1983,6 @@ Public Class Form1
         Dim ruleOptions As String() = {"ifAnyOfThese", "ifAllOfThese", "ifNoneOfThese", "ifPartnerAnyOfThese"}
         Dim booleanOptions As String() = {"false", "true"}
 
-        ' Create a new TabPage for Trait Modifier
         Dim newTab As New TabPage
         newTab.Text = "MOlead Trait Modifier " & traitMOLeadModifierTabCount
         newTab.Name = "MOleadTraitModifier" & traitMOLeadModifierTabCount
@@ -2178,7 +2007,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Who", .Top = 23, .Left = 230, .Width = 35, .Name = "lblWho"})
         newTab.Controls.Add(cbWho)
 
-        ' Rule ComboBox (Dropdown)
         Dim cbRule As New ComboBox
         cbRule.Name = "cbRule"
         cbRule.Top = 50
@@ -2190,7 +2018,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Rule", .Top = 53, .Left = 230, .Width = 30})
         newTab.Controls.Add(cbRule)
 
-        ' Trait List ComboBox and ListBox
         Dim cbTraitList As New ComboBox
         cbTraitList.Top = 80
         cbTraitList.Left = 20
@@ -2204,7 +2031,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Trait List", .Top = 83, .Left = 230})
         newTab.Controls.Add(cbTraitList)
 
-        ' ListBox to hold selected traits
         Dim lbTraitList As New ListBox
         lbTraitList.Name = "lbTraitList"
         lbTraitList.Top = 120
@@ -2212,7 +2038,6 @@ Public Class Form1
         lbTraitList.Width = 200
         newTab.Controls.Add(lbTraitList)
 
-        ' Add Button for Trait List
         Dim btnAddTrait As New Button
         btnAddTrait.Text = "Add Trait"
         btnAddTrait.Top = 160
@@ -2226,7 +2051,6 @@ Public Class Form1
                                       End Sub
         newTab.Controls.Add(btnAddTrait)
 
-        ' Remove Button for Trait List
         Dim btnRemoveTrait As New Button
         btnRemoveTrait.Text = "Remove Trait"
         btnRemoveTrait.Top = 185
@@ -2238,7 +2062,6 @@ Public Class Form1
                                          End Sub
         newTab.Controls.Add(btnRemoveTrait)
 
-        ' mustPassForApplication ComboBox (True/False)
         Dim cbMustPassForApplication As New ComboBox
         cbMustPassForApplication.Name = "cbMustPassForApplication"
         cbMustPassForApplication.Top = 225
@@ -2246,11 +2069,10 @@ Public Class Form1
         cbMustPassForApplication.Width = 200
         cbMustPassForApplication.Items.AddRange(booleanOptions)
         cbMustPassForApplication.DropDownStyle = ComboBoxStyle.DropDownList
-        cbMustPassForApplication.SelectedItem = "false" ' Default value
+        cbMustPassForApplication.SelectedItem = "false"
         newTab.Controls.Add(New Label With {.Text = "Must Pass For Application", .Top = 228, .Left = 230, .Width = 250})
         newTab.Controls.Add(cbMustPassForApplication)
 
-        ' Score Modifier NumericUpDown
         Dim nudScoreModifier As New NumericUpDown
         nudScoreModifier.Name = "nudScoreModifier"
         nudScoreModifier.Top = 255
@@ -2261,7 +2083,6 @@ Public Class Form1
         newTab.Controls.Add(New Label With {.Text = "Chance Modifier", .Top = 258, .Left = 230})
         newTab.Controls.Add(nudScoreModifier)
 
-        ' Copy From ComboBox (with null as the default value)
         Dim cbCopyFromTraitModifier As New ComboBox
         cbCopyFromTraitModifier.Name = "cbCopyFrom"
         cbCopyFromTraitModifier.Top = 285
@@ -2273,11 +2094,10 @@ Public Class Form1
             cbCopyFromTraitModifier.Items.Add(item.Trim())
         Next
         cbCopyFromTraitModifier.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFromTraitModifier.SelectedItem = "null" ' Default value
+        cbCopyFromTraitModifier.SelectedItem = "null"
         newTab.Controls.Add(New Label With {.Text = "Copy From", .Top = 288, .Left = 230})
         newTab.Controls.Add(cbCopyFromTraitModifier)
 
-        ' Remove Modifier Button
         Dim btnRemoveTraitModifier As New Button
         btnRemoveTraitModifier.Text = "Remove Modifier"
         btnRemoveTraitModifier.Top = 20
@@ -2301,7 +2121,6 @@ Public Class Form1
         Dim tpWeapon As New TabPage
         tpWeapon.Text = "Weapon Entry "
 
-        ' Weapon Label and ComboBox
         Dim weaponLabel As New Label
         weaponLabel.Text = "Weapon"
         weaponLabel.Top = 23
@@ -2320,11 +2139,10 @@ Public Class Form1
         "Poison",
         "BluntObjects"
     })
-        cbWeapon.DropDownStyle = ComboBoxStyle.DropDown ' Prevent user from entering their own values
-        cbWeapon.SelectedIndex = 0 ' Set the default value
+        cbWeapon.DropDownStyle = ComboBoxStyle.DropDown
+        cbWeapon.SelectedIndex = 0
         tpWeapon.Controls.Add(cbWeapon)
 
-        ' ListBox to show added weapons
         Dim lstWeapons As New ListBox
         lstWeapons.Name = "lstWeapons"
         lstWeapons.Top = 100
@@ -2333,7 +2151,6 @@ Public Class Form1
         lstWeapons.Height = 100
         tpWeapon.Controls.Add(lstWeapons)
 
-        ' Button to add selected ComboBox item to the ListBox
         Dim btnAddWeapon As New Button
         btnAddWeapon.Text = "Add Weapon"
         btnAddWeapon.Top = 60
@@ -2341,12 +2158,11 @@ Public Class Form1
         AddHandler btnAddWeapon.Click, Sub(s, ev)
                                            If cbWeapon.SelectedItem IsNot Nothing Then
                                                lstWeapons.Items.Add(cbWeapon.SelectedItem.ToString())
-                                               cbWeapon.SelectedIndex = -1 ' Reset selection after adding
+                                               cbWeapon.SelectedIndex = -1
                                            End If
                                        End Sub
         tpWeapon.Controls.Add(btnAddWeapon)
 
-        ' Button to remove selected item from the ListBox
         Dim btnRemoveWeapon As New Button
         btnRemoveWeapon.Text = "Remove Weapon"
         btnRemoveWeapon.Top = 60
@@ -2358,7 +2174,6 @@ Public Class Form1
                                           End Sub
         tpWeapon.Controls.Add(btnRemoveWeapon)
 
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 210
@@ -2366,13 +2181,10 @@ Public Class Form1
         btnRemove.Left = 355
         AddHandler btnRemove.Click, Sub(s, ev)
                                         weaponTabOpen = False
-                                        ' Get the index of the current tab
                                         Dim currentIndex As Integer = tabControlCase.TabPages.IndexOf(tpWeapon)
 
-                                        ' Remove the TabPage from the TabControl
                                         tabControlCase.TabPages.Remove(tpWeapon)
 
-                                        ' Select the tab below the current one if it exists
                                         If currentIndex < tabControlCase.TabPages.Count Then
                                             tabControlCase.SelectedIndex = currentIndex
                                         ElseIf currentIndex > 0 Then
@@ -2388,7 +2200,6 @@ Public Class Form1
         Dim tpTraitModifiers As New TabPage
         tpTraitModifiers.Text = "Murderer Trait Modifiers " & murdererTraitEntryCount
 
-        ' Rule
         Dim ruleLabel As New Label
         ruleLabel.Text = "Rule"
         ruleLabel.Top = 23
@@ -2411,7 +2222,6 @@ Public Class Form1
         cbRule.SelectedIndex = 0
         tpTraitModifiers.Controls.Add(cbRule)
 
-        ' Trait List
         Dim traitListLabel As New Label
         traitListLabel.Text = "Trait List"
         traitListLabel.Top = 60
@@ -2446,16 +2256,15 @@ Public Class Form1
         AddHandler btnAddTrait.Click, Sub(s, ev)
                                           If cbTrait.SelectedItem IsNot Nothing Then
                                               lstTraits.Items.Add(cbTrait.SelectedItem.ToString())
-                                              cbTrait.SelectedIndex = -1 ' Reset selection
+                                              cbTrait.SelectedIndex = -1
                                           End If
                                       End Sub
         tpTraitModifiers.Controls.Add(btnAddTrait)
 
-        ' Remove Job Button
         Dim btnRemoveJob As New Button
         btnRemoveJob.Text = "Remove Trait"
         btnRemoveJob.Top = 190
-        btnRemoveJob.Left = 300 ' Position next to the Add Job button
+        btnRemoveJob.Left = 300
         AddHandler btnRemoveJob.Click, Sub(s, ev)
                                            If lstTraits.SelectedItem IsNot Nothing Then
                                                lstTraits.Items.Remove(lstTraits.SelectedItem)
@@ -2463,7 +2272,6 @@ Public Class Form1
                                        End Sub
         tpTraitModifiers.Controls.Add(btnRemoveJob)
 
-        ' Must Pass For Application
         Dim mustPassLabel As New Label
         mustPassLabel.Text = "Must Pass For Application"
         mustPassLabel.Top = 223
@@ -2482,10 +2290,9 @@ Public Class Form1
             "false"
         })
         cbMustPass.DropDownStyle = ComboBoxStyle.DropDownList
-        cbMustPass.SelectedIndex = 1 ' Set default to "False"
+        cbMustPass.SelectedIndex = 1
         tpTraitModifiers.Controls.Add(cbMustPass)
 
-        ' Score Modifier
         Dim scoreModifierLabel As New Label
         scoreModifierLabel.Text = "Score Modifier"
         scoreModifierLabel.Top = 263
@@ -2497,8 +2304,8 @@ Public Class Form1
         numScoreModifier.Top = 260
         numScoreModifier.Left = 200
         numScoreModifier.Width = 100
-        numScoreModifier.Minimum = -100 ' Adjust as needed
-        numScoreModifier.Maximum = 100 ' Adjust as needed
+        numScoreModifier.Minimum = -100
+        numScoreModifier.Maximum = 100
         tpTraitModifiers.Controls.Add(numScoreModifier)
 
         Dim lblCopyFrom As New Label
@@ -2519,23 +2326,19 @@ Public Class Form1
             cbCopyFrom.Items.Add(item.Trim())
         Next
         cbCopyFrom.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFrom.SelectedIndex = 0 ' Default to null
+        cbCopyFrom.SelectedIndex = 0
         tpTraitModifiers.Controls.Add(cbCopyFrom)
 
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
         btnRemove.Left = 355
         AddHandler btnRemove.Click, Sub(s, ev)
                                         murdererTraitEntryCount -= 1
-                                        ' Get the index of the current tab
                                         Dim currentIndex As Integer = tabControlCase.TabPages.IndexOf(tpTraitModifiers)
 
-                                        ' Remove the TabPage from the TabControl
                                         tabControlCase.TabPages.Remove(tpTraitModifiers)
 
-                                        ' Select the tab below the current one if it exists
                                         If currentIndex < tabControlCase.TabPages.Count Then
                                             tabControlCase.SelectedIndex = currentIndex
                                         ElseIf currentIndex > 0 Then
@@ -2570,9 +2373,8 @@ Public Class Form1
             If TypeOf trait Is JValue Then
                 Dim traitName As String = trait.ToString()
 
-                ' Remove the prefix if it exists
                 If traitName.StartsWith("REF:CharacterTrait|") Then
-                    traitName = traitName.Replace("REF:CharacterTrait|", "") ' Remove "REF:" prefix
+                    traitName = traitName.Replace("REF:CharacterTrait|", "")
                 End If
 
                 lstTraits.Items.Add(traitName)
@@ -2587,9 +2389,7 @@ Public Class Form1
         Dim numScoreModifier As NumericUpDown = CType(tabPage.Controls("numScoreModifier"), NumericUpDown)
         numScoreModifier.Value = If(jsonData("scoreModifier") IsNot Nothing, CInt(jsonData("scoreModifier").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -2613,17 +2413,14 @@ Public Class Form1
                 Throw New ArgumentNullException(NameOf(value), "The JToken value is null.")
             End If
 
-            ' Check if it's a Boolean
             If value.Type = JTokenType.Boolean Then
                 Return value.ToObject(Of Boolean)()
-                ' Check if it's an integer
             ElseIf value.Type = JTokenType.Integer Then
                 Return value.ToObject(Of Integer)() = 1
             End If
 
             Return False
         Catch ex As Exception
-            ' Log the exception message and stack trace
             Console.WriteLine($"Error: {ex.Message}")
             Console.WriteLine($"Stack Trace: {ex.StackTrace}")
             Return False
@@ -2649,76 +2446,61 @@ Public Class Form1
         Dim originalText As String = txtOutput.Text
         Dim formattedText As New StringBuilder()
 
-        ' Process each line of the original text
         For Each line As String In originalText.Split(New String() {Environment.NewLine}, StringSplitOptions.None)
-            ' Keep the original indentation
             Dim trimmedLine As String = line.Trim()
 
-            ' Add color formatting logic
             If Not String.IsNullOrWhiteSpace(trimmedLine) Then
                 If trimmedLine.StartsWith("{") OrElse trimmedLine.StartsWith("}") Then
-                    formattedText.AppendLine(line) ' No color for braces, keep original
+                    formattedText.AppendLine(line)
                 ElseIf trimmedLine.Contains(":") Then
-                    ' Split the line at the first colon
                     Dim parts As String() = trimmedLine.Split(New Char() {":"c}, 2)
 
-                    ' Apply color formatting (example: keys in blue, values in black)
-                    formattedText.Append(parts(0).Trim() & ": ") ' Key without color
-                    formattedText.Append(parts(1).Trim() & Environment.NewLine) ' Value without color
+                    formattedText.Append(parts(0).Trim() & ": ")
+                    formattedText.Append(parts(1).Trim() & Environment.NewLine)
                 Else
-                    formattedText.AppendLine(line) ' For other lines, keep original
+                    formattedText.AppendLine(line)
                 End If
             Else
-                formattedText.AppendLine(line) ' Blank lines
+                formattedText.AppendLine(line)
             End If
         Next
 
-        ' Clear the rich text box and set the formatted text
         txtOutput.Clear()
         txtOutput.AppendText(formattedText.ToString())
 
-        ' Apply color formatting after setting the text
         ApplyColors()
     End Sub
     Private Sub FormatManifest()
         Dim originalText As String = txtManiOutput.Text
         Dim formattedText As New StringBuilder()
 
-        ' Process each line of the original text
         For Each line As String In originalText.Split(New String() {Environment.NewLine}, StringSplitOptions.None)
-            ' Keep the original indentation
             Dim trimmedLine As String = line.Trim()
 
-            ' Add color formatting logic
             If Not String.IsNullOrWhiteSpace(trimmedLine) Then
                 If trimmedLine.StartsWith("{") OrElse trimmedLine.StartsWith("}") Then
-                    formattedText.AppendLine(line) ' No color for braces, keep original
+                    formattedText.AppendLine(line)
                 ElseIf trimmedLine.Contains(":") Then
-                    ' Split the line at the first colon
                     Dim parts As String() = trimmedLine.Split(New Char() {":"c}, 2)
 
-                    ' Apply color formatting (example: keys in blue, values in black)
-                    formattedText.Append(parts(0).Trim() & ": ") ' Key without color
-                    formattedText.Append(parts(1).Trim() & Environment.NewLine) ' Value without color
+                    formattedText.Append(parts(0).Trim() & ": ")
+                    formattedText.Append(parts(1).Trim() & Environment.NewLine)
                 Else
-                    formattedText.AppendLine(line) ' For other lines, keep original
+                    formattedText.AppendLine(line)
                 End If
             Else
-                formattedText.AppendLine(line) ' Blank lines
+                formattedText.AppendLine(line)
             End If
         Next
 
-        ' Clear the rich text box and set the formatted text
         txtManiOutput.Clear()
         txtManiOutput.AppendText(formattedText.ToString())
 
-        ' Apply color formatting after setting the text
         ApplyColorsManifest()
     End Sub
     Private Sub ApplyColors()
-        ' Clear previous formatting
         txtOutput.SelectAll()
-        txtOutput.SelectionColor = Color.Black ' Reset to default color
+        txtOutput.SelectionColor = Color.Black
 
         Dim lines As String() = txtOutput.Text.Split(New String() {Environment.NewLine}, StringSplitOptions.None)
 
@@ -2728,28 +2510,24 @@ Public Class Form1
             While currentIndex < line.Length
                 Dim currentChar As Char = line(currentIndex)
 
-                ' Color for braces
                 If currentChar = "{"c OrElse currentChar = "}"c Then
                     txtOutput.SelectionStart = txtOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + currentIndex
                     txtOutput.SelectionLength = 1
                     txtOutput.SelectionColor = Color.Blue
                 ElseIf currentChar = """"c Then
-                    ' Handle the start of a string
                     Dim endQuoteIndex As Integer = currentIndex + 1
                     While endQuoteIndex < line.Length AndAlso line(endQuoteIndex) <> """"c
                         endQuoteIndex += 1
                     End While
 
                     If endQuoteIndex < line.Length Then
-                        ' Check if the string is a key (immediately followed by a colon)
                         Dim isKey As Boolean = (endQuoteIndex + 1 < line.Length AndAlso line(endQuoteIndex + 1) = ":"c)
                         txtOutput.SelectionStart = txtOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + currentIndex
                         txtOutput.SelectionLength = endQuoteIndex - currentIndex + 1
-                        txtOutput.SelectionColor = If(isKey, Color.Purple, Color.Red) ' Keys are purple, values are red
-                        currentIndex = endQuoteIndex ' Move index to the end of the string
+                        txtOutput.SelectionColor = If(isKey, Color.Purple, Color.Red)
+                        currentIndex = endQuoteIndex
                     End If
                 ElseIf Char.IsDigit(currentChar) Then
-                    ' Color numerical values
                     Dim numberStart As Integer = currentIndex
                     While currentIndex < line.Length AndAlso Char.IsDigit(line(currentIndex))
                         currentIndex += 1
@@ -2757,11 +2535,10 @@ Public Class Form1
                     txtOutput.SelectionStart = txtOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + numberStart
                     txtOutput.SelectionLength = currentIndex - numberStart
                     txtOutput.SelectionColor = Color.DarkOrange
-                    currentIndex -= 1 ' Adjust index back
+                    currentIndex -= 1
                 ElseIf String.Compare(line.Substring(currentIndex, Math.Min(4, line.Length - currentIndex)), "true", StringComparison.OrdinalIgnoreCase) = 0 OrElse
                        String.Compare(line.Substring(currentIndex, Math.Min(5, line.Length - currentIndex)), "false", StringComparison.OrdinalIgnoreCase) = 0 OrElse
                        String.Compare(line.Substring(currentIndex, Math.Min(4, line.Length - currentIndex)), "null", StringComparison.OrdinalIgnoreCase) = 0 Then
-                    ' Color boolean values
                     Dim boolStart As Integer = currentIndex
                     While currentIndex < line.Length AndAlso Not Char.IsWhiteSpace(line(currentIndex)) AndAlso line(currentIndex) <> ","c AndAlso line(currentIndex) <> "}"c
                         currentIndex += 1
@@ -2769,22 +2546,20 @@ Public Class Form1
                     txtOutput.SelectionStart = txtOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + boolStart
                     txtOutput.SelectionLength = currentIndex - boolStart
                     txtOutput.SelectionColor = Color.Green
-                    currentIndex -= 1 ' Adjust index back
+                    currentIndex -= 1
                 End If
 
-                currentIndex += 1 ' Move to the next character
+                currentIndex += 1
             End While
         Next
 
-        ' Reset selection
         txtOutput.SelectionStart = 0
         txtOutput.SelectionLength = 0
-        txtOutput.SelectionColor = Color.Black ' Reset to default color
+        txtOutput.SelectionColor = Color.Black
     End Sub
     Private Sub ApplyColorsManifest()
-        ' Clear previous formatting
         txtManiOutput.SelectAll()
-        txtManiOutput.SelectionColor = Color.Black ' Reset to default color
+        txtManiOutput.SelectionColor = Color.Black
 
         Dim lines As String() = txtManiOutput.Text.Split(New String() {Environment.NewLine}, StringSplitOptions.None)
 
@@ -2794,28 +2569,24 @@ Public Class Form1
             While currentIndex < line.Length
                 Dim currentChar As Char = line(currentIndex)
 
-                ' Color for braces
                 If currentChar = "{"c OrElse currentChar = "}"c Then
                     txtManiOutput.SelectionStart = txtManiOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + currentIndex
                     txtManiOutput.SelectionLength = 1
                     txtManiOutput.SelectionColor = Color.Blue
                 ElseIf currentChar = """"c Then
-                    ' Handle the start of a string
                     Dim endQuoteIndex As Integer = currentIndex + 1
                     While endQuoteIndex < line.Length AndAlso line(endQuoteIndex) <> """"c
                         endQuoteIndex += 1
                     End While
 
                     If endQuoteIndex < line.Length Then
-                        ' Check if the string is a key (immediately followed by a colon)
                         Dim isKey As Boolean = (endQuoteIndex + 1 < line.Length AndAlso line(endQuoteIndex + 1) = ":"c)
                         txtManiOutput.SelectionStart = txtManiOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + currentIndex
                         txtManiOutput.SelectionLength = endQuoteIndex - currentIndex + 1
-                        txtManiOutput.SelectionColor = If(isKey, Color.Purple, Color.Red) ' Keys are purple, values are red
-                        currentIndex = endQuoteIndex ' Move index to the end of the string
+                        txtManiOutput.SelectionColor = If(isKey, Color.Purple, Color.Red)
+                        currentIndex = endQuoteIndex
                     End If
                 ElseIf Char.IsDigit(currentChar) Then
-                    ' Color numerical values
                     Dim numberStart As Integer = currentIndex
                     While currentIndex < line.Length AndAlso Char.IsDigit(line(currentIndex))
                         currentIndex += 1
@@ -2823,11 +2594,10 @@ Public Class Form1
                     txtManiOutput.SelectionStart = txtManiOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + numberStart
                     txtManiOutput.SelectionLength = currentIndex - numberStart
                     txtManiOutput.SelectionColor = Color.DarkOrange
-                    currentIndex -= 1 ' Adjust index back
+                    currentIndex -= 1
                 ElseIf String.Compare(line.Substring(currentIndex, Math.Min(4, line.Length - currentIndex)), "true", StringComparison.OrdinalIgnoreCase) = 0 OrElse
                        String.Compare(line.Substring(currentIndex, Math.Min(5, line.Length - currentIndex)), "false", StringComparison.OrdinalIgnoreCase) = 0 OrElse
                        String.Compare(line.Substring(currentIndex, Math.Min(4, line.Length - currentIndex)), "null", StringComparison.OrdinalIgnoreCase) = 0 Then
-                    ' Color boolean values
                     Dim boolStart As Integer = currentIndex
                     While currentIndex < line.Length AndAlso Not Char.IsWhiteSpace(line(currentIndex)) AndAlso line(currentIndex) <> ","c AndAlso line(currentIndex) <> "}"c
                         currentIndex += 1
@@ -2835,17 +2605,16 @@ Public Class Form1
                     txtManiOutput.SelectionStart = txtManiOutput.GetFirstCharIndexFromLine(Array.IndexOf(lines, line)) + boolStart
                     txtManiOutput.SelectionLength = currentIndex - boolStart
                     txtManiOutput.SelectionColor = Color.Green
-                    currentIndex -= 1 ' Adjust index back
+                    currentIndex -= 1
                 End If
 
-                currentIndex += 1 ' Move to the next character
+                currentIndex += 1
             End While
         Next
 
-        ' Reset selection
         txtManiOutput.SelectionStart = 0
         txtManiOutput.SelectionLength = 0
-        txtManiOutput.SelectionColor = Color.Black ' Reset to default color
+        txtManiOutput.SelectionColor = Color.Black
     End Sub
     Private Sub btnAddMurdererTraits_Click(sender As Object, e As EventArgs) Handles btnAddMurdererTraits.Click
         Dim tpMurdererTraits As TabPage = CreateMurdererTraitModifiersTab()
@@ -2876,7 +2645,6 @@ Public Class Form1
         Dim tpJobModifier As New TabPage
         tpJobModifier.Text = "Murderer Job Modifiers " & murdererJobModifierEntryCount
 
-        ' Job Label and ComboBox
         Dim jobLabel As New Label
         jobLabel.Text = "Job"
         jobLabel.Top = 23
@@ -2896,7 +2664,6 @@ Public Class Form1
         cbJob.DropDownStyle = ComboBoxStyle.DropDown
         tpJobModifier.Controls.Add(cbJob)
 
-        ' ListBox for selected jobs
         Dim lstJobs As New ListBox
         lstJobs.Name = "lstJobs"
         lstJobs.Top = 60
@@ -2905,7 +2672,6 @@ Public Class Form1
         lstJobs.Height = 100
         tpJobModifier.Controls.Add(lstJobs)
 
-        ' Add Job Button
         Dim btnAddJob As New Button
         btnAddJob.Text = "Add"
         btnAddJob.Top = 170
@@ -2913,16 +2679,15 @@ Public Class Form1
         AddHandler btnAddJob.Click, Sub(s, ev)
                                         If cbJob.SelectedItem IsNot Nothing Then
                                             lstJobs.Items.Add(cbJob.SelectedItem.ToString())
-                                            cbJob.SelectedIndex = -1 ' Reset selection
+                                            cbJob.SelectedIndex = -1
                                         End If
                                     End Sub
         tpJobModifier.Controls.Add(btnAddJob)
 
-        ' Remove Job Button
         Dim btnRemoveJob As New Button
         btnRemoveJob.Text = "Remove Job"
         btnRemoveJob.Top = 170
-        btnRemoveJob.Left = 90 ' Position next to the Add Job button
+        btnRemoveJob.Left = 90
         AddHandler btnRemoveJob.Click, Sub(s, ev)
                                            If lstJobs.SelectedItem IsNot Nothing Then
                                                lstJobs.Items.Remove(lstJobs.SelectedItem)
@@ -2930,7 +2695,6 @@ Public Class Form1
                                        End Sub
         tpJobModifier.Controls.Add(btnRemoveJob)
 
-        ' Job Boost Label and NumericUpDown
         Dim lblJobBoost As New Label
         lblJobBoost.Text = "Job Boost"
         lblJobBoost.Top = 213
@@ -2965,9 +2729,8 @@ Public Class Form1
             cbCopyFrom.Items.Add(item.Trim())
         Next
         cbCopyFrom.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFrom.SelectedIndex = 0 ' Default to null
+        cbCopyFrom.SelectedIndex = 0
         tpJobModifier.Controls.Add(cbCopyFrom)
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -2989,18 +2752,15 @@ Public Class Form1
         Return tpJobModifier
     End Function
     Private Sub LoadMurdererJobModifierTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Murderer Job Modifiers " & entryIndex
 
-        ' Jobs ListBox
         Dim lstJobs As ListBox = CType(tabPage.Controls("lstJobs"), ListBox)
         lstJobs.Items.Clear()
         For Each job In jsonData("jobs")
             If TypeOf job Is JValue Then
                 Dim jobName As String = job.ToString()
 
-                ' Remove the prefix if it exists
                 If jobName.StartsWith("REF:OccupationPreset|") Then
                     jobName = jobName.Replace("REF:OccupationPreset|", "")
                 End If
@@ -3009,13 +2769,10 @@ Public Class Form1
             End If
         Next
 
-        ' Job Boost NumericUpDown
         Dim numJobBoost As NumericUpDown = CType(tabPage.Controls("numJobBoost"), NumericUpDown)
         numJobBoost.Value = If(jsonData("jobBoost") IsNot Nothing, CInt(jsonData("jobBoost").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         Dim copyFromValue As String = jsonData("copyFrom").ToString()
         If copyFromValue.StartsWith("REF:MurderMO|") Then
             copyFromValue = copyFromValue.Replace("REF:MurderMO|", "")
@@ -3039,7 +2796,6 @@ Public Class Form1
         Dim tpCompanyModifier As New TabPage
         tpCompanyModifier.Text = "Murderer Company Modifiers " & murdererCompanyModifierEntryCount
 
-        ' Companies Label and ComboBox
         Dim companiesLabel As New Label
         companiesLabel.Text = "Company"
         companiesLabel.Top = 23
@@ -3059,7 +2815,6 @@ Public Class Form1
         cbCompanies.DropDownStyle = ComboBoxStyle.DropDown
         tpCompanyModifier.Controls.Add(cbCompanies)
 
-        ' ListBox for selected companies
         Dim lstCompanies As New ListBox
         lstCompanies.Name = "lstCompanies"
         lstCompanies.Top = 60
@@ -3068,7 +2823,6 @@ Public Class Form1
         lstCompanies.Height = 100
         tpCompanyModifier.Controls.Add(lstCompanies)
 
-        ' Add Company Button
         Dim btnAddCompany As New Button
         btnAddCompany.Text = "Add Company"
         btnAddCompany.Top = 170
@@ -3076,16 +2830,15 @@ Public Class Form1
         AddHandler btnAddCompany.Click, Sub(s, ev)
                                             If cbCompanies.SelectedItem IsNot Nothing Then
                                                 lstCompanies.Items.Add(cbCompanies.SelectedItem.ToString())
-                                                cbCompanies.SelectedIndex = -1 ' Reset selection
+                                                cbCompanies.SelectedIndex = -1
                                             End If
                                         End Sub
         tpCompanyModifier.Controls.Add(btnAddCompany)
 
-        ' Remove Company Button
         Dim btnRemoveCompany As New Button
         btnRemoveCompany.Text = "Remove Company"
         btnRemoveCompany.Top = 170
-        btnRemoveCompany.Left = 120 ' Position next to the Add Company button
+        btnRemoveCompany.Left = 120
         AddHandler btnRemoveCompany.Click, Sub(s, ev)
                                                If lstCompanies.SelectedItem IsNot Nothing Then
                                                    lstCompanies.Items.Remove(lstCompanies.SelectedItem)
@@ -3093,7 +2846,6 @@ Public Class Form1
                                            End Sub
         tpCompanyModifier.Controls.Add(btnRemoveCompany)
 
-        ' Minimum Employees Label and NumericUpDown
         Dim lblMinimumEmployees As New Label
         lblMinimumEmployees.Text = "Minimum Employees"
         lblMinimumEmployees.Top = 213
@@ -3110,7 +2862,6 @@ Public Class Form1
         nudMinimumEmployees.Maximum = 1000
         tpCompanyModifier.Controls.Add(nudMinimumEmployees)
 
-        ' Company Boost Label and NumericUpDown
         Dim lblCompanyBoost As New Label
         lblCompanyBoost.Text = "Company Boost"
         lblCompanyBoost.Top = 243
@@ -3127,7 +2878,6 @@ Public Class Form1
         nudCompanyBoost.Maximum = 1000
         tpCompanyModifier.Controls.Add(nudCompanyBoost)
 
-        ' Boost Per Employee Label and NumericUpDown
         Dim lblBoostPerEmployee As New Label
         lblBoostPerEmployee.Text = "Boost Per Employee"
         lblBoostPerEmployee.Top = 273
@@ -3144,7 +2894,6 @@ Public Class Form1
         nudBoostPerEmployee.Maximum = 1000
         tpCompanyModifier.Controls.Add(nudBoostPerEmployee)
 
-        ' Copy From Label and ComboBox
         Dim lblCopyFrom As New Label
         lblCopyFrom.Text = "Copy From"
         lblCopyFrom.Top = 303
@@ -3162,10 +2911,9 @@ Public Class Form1
             cbCopyFrom.Items.Add(item.Trim())
         Next
         cbCopyFrom.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFrom.SelectedIndex = 0 ' Default to null
+        cbCopyFrom.SelectedIndex = 0
         tpCompanyModifier.Controls.Add(cbCopyFrom)
 
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -3187,18 +2935,15 @@ Public Class Form1
         Return tpCompanyModifier
     End Function
     Private Sub LoadMurdererCompanyModifierTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Murderer Company Modifiers " & entryIndex
 
-        ' Companies ListBox
         Dim lstCompanies As ListBox = CType(tabPage.Controls("lstCompanies"), ListBox)
         lstCompanies.Items.Clear()
         For Each company In jsonData("companies")
             If TypeOf company Is JValue Then
                 Dim companyName As String = company.ToString()
 
-                ' Remove the prefix if it exists
                 If companyName.StartsWith("REF:CompanyPreset|") Then
                     companyName = companyName.Replace("REF:CompanyPreset|", "")
                 End If
@@ -3207,21 +2952,16 @@ Public Class Form1
             End If
         Next
 
-        ' Minimum Employees NumericUpDown
         Dim nudMinimumEmployees As NumericUpDown = CType(tabPage.Controls("nudMinimumEmployees"), NumericUpDown)
         nudMinimumEmployees.Value = If(jsonData("minimumEmployees") IsNot Nothing, CInt(jsonData("minimumEmployees").ToObject(Of Decimal)()), 0)
 
-        ' Company Boost NumericUpDown
         Dim nudCompanyBoost As NumericUpDown = CType(tabPage.Controls("nudCompanyBoost"), NumericUpDown)
         nudCompanyBoost.Value = If(jsonData("companyBoost") IsNot Nothing, CInt(jsonData("companyBoost").ToObject(Of Decimal)()), 0)
 
-        ' Boost Per Employee Over Minimum NumericUpDown
         Dim nudBoostPerEmployee As NumericUpDown = CType(tabPage.Controls("nudBoostPerEmployeeOverMinimum"), NumericUpDown)
         nudBoostPerEmployee.Value = If(jsonData("boostPerEmployeeOverMinimum") IsNot Nothing, CInt(jsonData("boostPerEmployeeOverMinimum").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -3253,7 +2993,6 @@ Public Class Form1
         Dim tpHexaco As New TabPage
         tpHexaco.Text = "Hexaco Modifiers"
 
-        ' Create controls for outputMin
         Dim lblOutputMin As New Label
         lblOutputMin.Text = "Output Min"
         lblOutputMin.Top = 10
@@ -3269,7 +3008,6 @@ Public Class Form1
         nudOutputMin.Value = 1
         tpHexaco.Controls.Add(nudOutputMin)
 
-        ' Create controls for outputMax
         Dim lblOutputMax As New Label
         lblOutputMax.Text = "Output Max"
         lblOutputMax.Top = 40
@@ -3285,12 +3023,10 @@ Public Class Form1
         nudOutputMax.Value = 10
         tpHexaco.Controls.Add(nudOutputMax)
 
-        ' Function to create checkbox and numeric controls for HEXACO traits
         Dim currentTop As Integer = 70
         Dim traits As String() = {"FeminineMasculine", "Humility", "Emotionality", "Extraversion", "Agreeableness", "Conscientiousness", "Creativity"}
 
         For Each trait As String In traits
-            ' Enable trait dropdown (true/false)
             Dim lblEnableTrait As New Label
             If trait = "FeminineMasculine" Then
                 lblEnableTrait.Text = "Enable Feminine Masculine"
@@ -3309,10 +3045,9 @@ Public Class Form1
             cbEnableTrait.Left = 170
             cbEnableTrait.Items.AddRange(New String() {"false", "true"})
             cbEnableTrait.DropDownStyle = ComboBoxStyle.DropDownList
-            cbEnableTrait.SelectedIndex = 0 ' Default to false
+            cbEnableTrait.SelectedIndex = 0
             tpHexaco.Controls.Add(cbEnableTrait)
 
-            ' Trait numeric input
             Dim lblTrait As New Label
             If trait = "FeminineMasculine" Then
                 lblTrait.Text = "Feminine Masculine"
@@ -3334,13 +3069,11 @@ Public Class Form1
 
             currentTop += 60
 
-            ' Add a Remove button inside the TabPage
             Dim btnRemove As New Button
             btnRemove.Text = "Remove"
             btnRemove.Top = 20
             btnRemove.Left = 355
             AddHandler btnRemove.Click, Sub(s, ev)
-                                            ' Remove the TabPage from the TabControl
                                             hexacoTabOpen = False
                                             tabControlCase.TabPages.Remove(tpHexaco)
                                         End Sub
@@ -3353,11 +3086,9 @@ Public Class Form1
         Return tpHexaco
     End Function
     Private Sub LoadHexacoData(ByVal tpHexaco As TabPage, ByVal hexacoData As JObject)
-        ' Set NumericUpDown values
         CType(tpHexaco.Controls("nudOutputMin"), NumericUpDown).Value = CDec(hexacoData("outputMin"))
         CType(tpHexaco.Controls("nudOutputMax"), NumericUpDown).Value = CDec(hexacoData("outputMax"))
 
-        ' Set ComboBox values (enable flags) and corresponding NumericUpDowns for each trait
         CType(tpHexaco.Controls("cbEnableFeminineMasculine"), ComboBox).SelectedItem = hexacoData("enableFeminineMasculine").ToString().ToLower()
         CType(tpHexaco.Controls("nudFeminineMasculine"), NumericUpDown).Value = CDec(hexacoData("feminineMasculine"))
 
@@ -3389,7 +3120,6 @@ Public Class Form1
         Dim tpVictimTraitModifiers As New TabPage
         tpVictimTraitModifiers.Text = "Victim Trait Modifiers " & victimTraitEntryCount
 
-        ' Rule
         Dim ruleLabel As New Label
         ruleLabel.Text = "Rule"
         ruleLabel.Top = 23
@@ -3412,7 +3142,6 @@ Public Class Form1
         cbRule.SelectedIndex = 0
         tpVictimTraitModifiers.Controls.Add(cbRule)
 
-        ' Trait List
         Dim traitListLabel As New Label
         traitListLabel.Text = "Trait List"
         traitListLabel.Top = 60
@@ -3447,16 +3176,15 @@ Public Class Form1
         AddHandler btnAddTrait.Click, Sub(s, ev)
                                           If cbTrait.SelectedItem IsNot Nothing Then
                                               lstTraits.Items.Add(cbTrait.SelectedItem.ToString())
-                                              cbTrait.SelectedIndex = -1 ' Reset selection
+                                              cbTrait.SelectedIndex = -1
                                           End If
                                       End Sub
         tpVictimTraitModifiers.Controls.Add(btnAddTrait)
 
-        ' Remove Job Button
         Dim btnRemoveJob As New Button
         btnRemoveJob.Text = "Remove Trait"
         btnRemoveJob.Top = 190
-        btnRemoveJob.Left = 300 ' Position next to the Add Job button
+        btnRemoveJob.Left = 300
         AddHandler btnRemoveJob.Click, Sub(s, ev)
                                            If lstTraits.SelectedItem IsNot Nothing Then
                                                lstTraits.Items.Remove(lstTraits.SelectedItem)
@@ -3464,7 +3192,6 @@ Public Class Form1
                                        End Sub
         tpVictimTraitModifiers.Controls.Add(btnRemoveJob)
 
-        ' Must Pass For Application
         Dim mustPassLabel As New Label
         mustPassLabel.Text = "Must Pass For Application"
         mustPassLabel.Top = 223
@@ -3483,10 +3210,9 @@ Public Class Form1
             "false"
         })
         cbMustPass.DropDownStyle = ComboBoxStyle.DropDownList
-        cbMustPass.SelectedIndex = 1 ' Set default to "False"
+        cbMustPass.SelectedIndex = 1
         tpVictimTraitModifiers.Controls.Add(cbMustPass)
 
-        ' Score Modifier
         Dim scoreModifierLabel As New Label
         scoreModifierLabel.Text = "Score Modifier"
         scoreModifierLabel.Top = 263
@@ -3498,8 +3224,8 @@ Public Class Form1
         numScoreModifier.Top = 260
         numScoreModifier.Left = 200
         numScoreModifier.Width = 100
-        numScoreModifier.Minimum = -100 ' Adjust as needed
-        numScoreModifier.Maximum = 100 ' Adjust as needed
+        numScoreModifier.Minimum = -100
+        numScoreModifier.Maximum = 100
         tpVictimTraitModifiers.Controls.Add(numScoreModifier)
 
         Dim lblCopyFrom As New Label
@@ -3520,23 +3246,19 @@ Public Class Form1
             cbCopyFrom.Items.Add(item.Trim())
         Next
         cbCopyFrom.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFrom.SelectedIndex = 0 ' Default to null
+        cbCopyFrom.SelectedIndex = 0
         tpVictimTraitModifiers.Controls.Add(cbCopyFrom)
 
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
         btnRemove.Left = 355
         AddHandler btnRemove.Click, Sub(s, ev)
                                         victimTraitEntryCount -= 1
-                                        ' Get the index of the current tab
                                         Dim currentIndex As Integer = tabControlCase.TabPages.IndexOf(tpVictimTraitModifiers)
 
-                                        ' Remove the TabPage from the TabControl
                                         tabControlCase.TabPages.Remove(tpVictimTraitModifiers)
 
-                                        ' Select the tab below the current one if it exists
                                         If currentIndex < tabControlCase.TabPages.Count Then
                                             tabControlCase.SelectedIndex = currentIndex
                                         ElseIf currentIndex > 0 Then
@@ -3570,9 +3292,8 @@ Public Class Form1
             If TypeOf trait Is JValue Then
                 Dim traitName As String = trait.ToString()
 
-                ' Remove the prefix if it exists
                 If traitName.StartsWith("REF:CharacterTrait|") Then
-                    traitName = traitName.Replace("REF:CharacterTrait|", "") ' Remove "REF:" prefix
+                    traitName = traitName.Replace("REF:CharacterTrait|", "")
                 End If
 
                 lstTraits.Items.Add(traitName)
@@ -3587,9 +3308,7 @@ Public Class Form1
         Dim numScoreModifier As NumericUpDown = CType(tabPage.Controls("numScoreModifier"), NumericUpDown)
         numScoreModifier.Value = If(jsonData("scoreModifier") IsNot Nothing, CInt(jsonData("scoreModifier").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -3617,7 +3336,6 @@ Public Class Form1
         Dim tpJobModifier As New TabPage
         tpJobModifier.Text = "Victim Job Modifiers " & victimJobModifierEntryCount
 
-        ' Job Label and ComboBox
         Dim jobLabel As New Label
         jobLabel.Name = "lblJob"
         jobLabel.Text = "Job"
@@ -3638,7 +3356,6 @@ Public Class Form1
         cbJob.DropDownStyle = ComboBoxStyle.DropDown
         tpJobModifier.Controls.Add(cbJob)
 
-        ' ListBox for selected jobs
         Dim lstJobs As New ListBox
         lstJobs.Name = "lstJobs"
         lstJobs.Top = 60
@@ -3647,7 +3364,6 @@ Public Class Form1
         lstJobs.Height = 100
         tpJobModifier.Controls.Add(lstJobs)
 
-        ' Add Job Button
         Dim btnAddJob As New Button
         btnAddJob.Text = "Add"
         btnAddJob.Top = 170
@@ -3655,16 +3371,15 @@ Public Class Form1
         AddHandler btnAddJob.Click, Sub(s, ev)
                                         If cbJob.SelectedItem IsNot Nothing Then
                                             lstJobs.Items.Add(cbJob.SelectedItem.ToString())
-                                            cbJob.SelectedIndex = -1 ' Reset selection
+                                            cbJob.SelectedIndex = -1
                                         End If
                                     End Sub
         tpJobModifier.Controls.Add(btnAddJob)
 
-        ' Remove Job Button
         Dim btnRemoveJob As New Button
         btnRemoveJob.Text = "Remove Job"
         btnRemoveJob.Top = 170
-        btnRemoveJob.Left = 90 ' Position next to the Add Job button
+        btnRemoveJob.Left = 90
         AddHandler btnRemoveJob.Click, Sub(s, ev)
                                            If lstJobs.SelectedItem IsNot Nothing Then
                                                lstJobs.Items.Remove(lstJobs.SelectedItem)
@@ -3672,7 +3387,6 @@ Public Class Form1
                                        End Sub
         tpJobModifier.Controls.Add(btnRemoveJob)
 
-        ' Job Boost Label and NumericUpDown
         Dim lblJobBoost As New Label
         lblJobBoost.Text = "Job Boost"
         lblJobBoost.Top = 213
@@ -3707,9 +3421,8 @@ Public Class Form1
             cbCopyFrom.Items.Add(item.Trim())
         Next
         cbCopyFrom.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFrom.SelectedIndex = 0 ' Default to null
+        cbCopyFrom.SelectedIndex = 0
         tpJobModifier.Controls.Add(cbCopyFrom)
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -3731,18 +3444,15 @@ Public Class Form1
         Return tpJobModifier
     End Function
     Private Sub LoadVictimJobModifierTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Victim Job Modifiers " & entryIndex
 
-        ' Jobs ListBox
         Dim lstJobs As ListBox = CType(tabPage.Controls("lstJobs"), ListBox)
         lstJobs.Items.Clear()
         For Each job In jsonData("jobs")
             If TypeOf job Is JValue Then
                 Dim jobName As String = job.ToString()
 
-                ' Remove the prefix if it exists
                 If jobName.StartsWith("REF:OccupationPreset|") Then
                     jobName = jobName.Replace("REF:OccupationPreset|", "")
                 End If
@@ -3751,13 +3461,10 @@ Public Class Form1
             End If
         Next
 
-        ' Job Boost NumericUpDown
         Dim numJobBoost As NumericUpDown = CType(tabPage.Controls("numJobBoost"), NumericUpDown)
         numJobBoost.Value = If(jsonData("jobBoost") IsNot Nothing, CInt(jsonData("jobBoost").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -3785,7 +3492,6 @@ Public Class Form1
         Dim tpCompanyModifier As New TabPage
         tpCompanyModifier.Text = "Victim Company Modifiers " & victimCompanyModifierEntryCount
 
-        ' Companies Label and ComboBox
         Dim companiesLabel As New Label
         companiesLabel.Text = "Company"
         companiesLabel.Top = 23
@@ -3805,7 +3511,6 @@ Public Class Form1
         cbCompanies.DropDownStyle = ComboBoxStyle.DropDown
         tpCompanyModifier.Controls.Add(cbCompanies)
 
-        ' ListBox for selected companies
         Dim lstCompanies As New ListBox
         lstCompanies.Name = "lstCompanies"
         lstCompanies.Top = 60
@@ -3814,7 +3519,6 @@ Public Class Form1
         lstCompanies.Height = 100
         tpCompanyModifier.Controls.Add(lstCompanies)
 
-        ' Add Company Button
         Dim btnAddCompany As New Button
         btnAddCompany.Text = "Add Company"
         btnAddCompany.Top = 170
@@ -3822,16 +3526,15 @@ Public Class Form1
         AddHandler btnAddCompany.Click, Sub(s, ev)
                                             If cbCompanies.SelectedItem IsNot Nothing Then
                                                 lstCompanies.Items.Add(cbCompanies.SelectedItem.ToString())
-                                                cbCompanies.SelectedIndex = -1 ' Reset selection
+                                                cbCompanies.SelectedIndex = -1
                                             End If
                                         End Sub
         tpCompanyModifier.Controls.Add(btnAddCompany)
 
-        ' Remove Company Button
         Dim btnRemoveCompany As New Button
         btnRemoveCompany.Text = "Remove Company"
         btnRemoveCompany.Top = 170
-        btnRemoveCompany.Left = 120 ' Position next to the Add Company button
+        btnRemoveCompany.Left = 120
         AddHandler btnRemoveCompany.Click, Sub(s, ev)
                                                If lstCompanies.SelectedItem IsNot Nothing Then
                                                    lstCompanies.Items.Remove(lstCompanies.SelectedItem)
@@ -3839,7 +3542,6 @@ Public Class Form1
                                            End Sub
         tpCompanyModifier.Controls.Add(btnRemoveCompany)
 
-        ' Minimum Employees Label and NumericUpDown
         Dim lblMinimumEmployees As New Label
         lblMinimumEmployees.Text = "Minimum Employees"
         lblMinimumEmployees.Top = 213
@@ -3856,7 +3558,6 @@ Public Class Form1
         nudMinimumEmployees.Maximum = 1000
         tpCompanyModifier.Controls.Add(nudMinimumEmployees)
 
-        ' Company Boost Label and NumericUpDown
         Dim lblCompanyBoost As New Label
         lblCompanyBoost.Text = "Company Boost"
         lblCompanyBoost.Top = 243
@@ -3873,7 +3574,6 @@ Public Class Form1
         nudCompanyBoost.Maximum = 1000
         tpCompanyModifier.Controls.Add(nudCompanyBoost)
 
-        ' Boost Per Employee Label and NumericUpDown
         Dim lblBoostPerEmployee As New Label
         lblBoostPerEmployee.Text = "Boost Per Employee"
         lblBoostPerEmployee.Top = 273
@@ -3890,7 +3590,6 @@ Public Class Form1
         nudBoostPerEmployee.Maximum = 1000
         tpCompanyModifier.Controls.Add(nudBoostPerEmployee)
 
-        ' Copy From Label and ComboBox
         Dim lblCopyFrom As New Label
         lblCopyFrom.Text = "Copy From"
         lblCopyFrom.Top = 303
@@ -3908,10 +3607,9 @@ Public Class Form1
             cbCopyFrom.Items.Add(item.Trim())
         Next
         cbCopyFrom.DropDownStyle = ComboBoxStyle.DropDown
-        cbCopyFrom.SelectedIndex = 0 ' Default to null
+        cbCopyFrom.SelectedIndex = 0
         tpCompanyModifier.Controls.Add(cbCopyFrom)
 
-        ' Add a Remove button inside the TabPage
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -3933,18 +3631,15 @@ Public Class Form1
         Return tpCompanyModifier
     End Function
     Private Sub LoadVictimCompanyModifierTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Victim Company Modifiers " & entryIndex
 
-        ' Companies ListBox
         Dim lstCompanies As ListBox = CType(tabPage.Controls("lstCompanies"), ListBox)
         lstCompanies.Items.Clear()
         For Each company In jsonData("companies")
             If TypeOf company Is JValue Then
                 Dim companyName As String = company.ToString()
 
-                ' Remove the prefix if it exists
                 If companyName.StartsWith("REF:CompanyPreset|") Then
                     companyName = companyName.Replace("REF:CompanyPreset|", "")
                 End If
@@ -3953,21 +3648,16 @@ Public Class Form1
             End If
         Next
 
-        ' Minimum Employees NumericUpDown
         Dim nudMinimumEmployees As NumericUpDown = CType(tabPage.Controls("nudMinimumEmployees"), NumericUpDown)
         nudMinimumEmployees.Value = If(jsonData("minimumEmployees") IsNot Nothing, CInt(jsonData("minimumEmployees").ToObject(Of Decimal)()), 0)
 
-        ' Company Boost NumericUpDown
         Dim nudCompanyBoost As NumericUpDown = CType(tabPage.Controls("nudCompanyBoost"), NumericUpDown)
         nudCompanyBoost.Value = If(jsonData("companyBoost") IsNot Nothing, CInt(jsonData("companyBoost").ToObject(Of Decimal)()), 0)
 
-        ' Boost Per Employee Over Minimum NumericUpDown
         Dim nudBoostPerEmployee As NumericUpDown = CType(tabPage.Controls("nudBoostPerEmployeeOverMinimum"), NumericUpDown)
         nudBoostPerEmployee.Value = If(jsonData("boostPerEmployeeOverMinimum") IsNot Nothing, CInt(jsonData("boostPerEmployeeOverMinimum").ToObject(Of Decimal)()), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -3996,17 +3686,14 @@ Public Class Form1
     End Sub
     Private Function CreateConfessionalDDSTab() As TabPage
         ddsConfessionalTabOpen = True
-        ' Create a new TabPage for Confessional DDS
         Dim tpConfessionalDDS As New TabPage("Confessional DDS")
 
-        ' Create a label for the DDS string input
         Dim lblDDSString As New Label()
         lblDDSString.Text = "DDS String:"
         lblDDSString.Top = 10
         lblDDSString.Left = 10
         tpConfessionalDDS.Controls.Add(lblDDSString)
 
-        ' Create a TextBox for entering the DDS string
         Dim txtDDSString As New TextBox()
         txtDDSString.Name = "txtDDSString"
         txtDDSString.Top = 30
@@ -4014,7 +3701,6 @@ Public Class Form1
         txtDDSString.Width = 250
         tpConfessionalDDS.Controls.Add(txtDDSString)
 
-        ' Create a ListBox for displaying the stored DDS responses
         Dim lstDDSResponses As New ListBox()
         lstDDSResponses.Name = "lstDDSResponses"
         lstDDSResponses.Top = 60
@@ -4023,7 +3709,6 @@ Public Class Form1
         lstDDSResponses.Height = 150
         tpConfessionalDDS.Controls.Add(lstDDSResponses)
 
-        ' Create a Button to add the DDS string to the ListBox
         Dim btnAddDDS As New Button()
         btnAddDDS.Text = "Add DDS"
         btnAddDDS.Top = 220
@@ -4031,12 +3716,11 @@ Public Class Form1
         AddHandler btnAddDDS.Click, Sub(sender, e)
                                         If Not String.IsNullOrWhiteSpace(txtDDSString.Text) Then
                                             lstDDSResponses.Items.Add(txtDDSString.Text)
-                                            txtDDSString.Clear() ' Clear the TextBox after adding
+                                            txtDDSString.Clear()
                                         End If
                                     End Sub
         tpConfessionalDDS.Controls.Add(btnAddDDS)
 
-        ' Create a Button to remove the selected DDS string from the ListBox
         Dim btnRemoveDDS As New Button()
         btnRemoveDDS.Text = "Remove Selected"
         btnRemoveDDS.Top = 220
@@ -4091,7 +3775,6 @@ Public Class Form1
         Dim tpGraffiti As New TabPage
         tpGraffiti.Text = "Graffiti Entry " & graffitiEntryCount
 
-        ' Preset Label
         Dim presetLabel As New Label
         presetLabel.Text = "Preset"
         presetLabel.Top = 23
@@ -4099,7 +3782,6 @@ Public Class Form1
         presetLabel.Width = 100
         tpGraffiti.Controls.Add(presetLabel)
 
-        ' Preset ComboBox
         Dim cbPreset As New ComboBox
         cbPreset.Top = 20
         cbPreset.Left = 150
@@ -4113,7 +3795,6 @@ Public Class Form1
         cbPreset.SelectedIndex = 0
         tpGraffiti.Controls.Add(cbPreset)
 
-        ' Pos Label
         Dim posLabel As New Label
         posLabel.Text = "Pos"
         posLabel.Top = 53
@@ -4121,7 +3802,6 @@ Public Class Form1
         posLabel.Width = 100
         tpGraffiti.Controls.Add(posLabel)
 
-        ' Pos ComboBox
         Dim cbPos As New ComboBox
         cbPos.Top = 50
         cbPos.Left = 150
@@ -4132,7 +3812,6 @@ Public Class Form1
         cbPos.SelectedIndex = 0
         tpGraffiti.Controls.Add(cbPos)
 
-        ' Art Image Label
         Dim artImageLabel As New Label
         artImageLabel.Text = "Art Image"
         artImageLabel.Top = 83
@@ -4140,7 +3819,6 @@ Public Class Form1
         artImageLabel.Width = 100
         tpGraffiti.Controls.Add(artImageLabel)
 
-        ' Art Image ComboBox
         Dim cbArtImage As New ComboBox
         cbArtImage.Top = 80
         cbArtImage.Left = 150
@@ -4154,7 +3832,6 @@ Public Class Form1
         cbArtImage.SelectedIndex = 0
         tpGraffiti.Controls.Add(cbArtImage)
 
-        ' DDS Message Text List Label
         Dim ddsMessageTextLabel As New Label
         ddsMessageTextLabel.Text = "DDS Message Text List"
         ddsMessageTextLabel.Top = 113
@@ -4162,7 +3839,6 @@ Public Class Form1
         ddsMessageTextLabel.Width = 150
         tpGraffiti.Controls.Add(ddsMessageTextLabel)
 
-        ' DDS Message Text List TextBox
         Dim txtDDSMessageText As New TextBox
         txtDDSMessageText.Top = 110
         txtDDSMessageText.Left = 150
@@ -4170,7 +3846,6 @@ Public Class Form1
         txtDDSMessageText.Name = "txtDDSMessageText"
         tpGraffiti.Controls.Add(txtDDSMessageText)
 
-        ' Color Label
         Dim colorLabel As New Label
         colorLabel.Text = "Color"
         colorLabel.Top = 143
@@ -4178,7 +3853,6 @@ Public Class Form1
         colorLabel.Width = 100
         tpGraffiti.Controls.Add(colorLabel)
 
-        ' Color TextBox
         Dim txtColor As New TextBox
         txtColor.Top = 140
         txtColor.Left = 150
@@ -4186,7 +3860,6 @@ Public Class Form1
         txtColor.Name = "txtColor"
         tpGraffiti.Controls.Add(txtColor)
 
-        ' Size Label
         Dim sizeLabel As New Label
         sizeLabel.Text = "Size"
         sizeLabel.Top = 173
@@ -4194,7 +3867,6 @@ Public Class Form1
         sizeLabel.Width = 100
         tpGraffiti.Controls.Add(sizeLabel)
 
-        ' Size NumericUpDown
         Dim numSize As New NumericUpDown
         numSize.Top = 170
         numSize.Left = 150
@@ -4204,7 +3876,6 @@ Public Class Form1
         numSize.Maximum = 1000
         tpGraffiti.Controls.Add(numSize)
 
-        ' Copy From Label
         Dim copyFromLabel As New Label
         copyFromLabel.Text = "Copy From"
         copyFromLabel.Top = 203
@@ -4212,7 +3883,6 @@ Public Class Form1
         copyFromLabel.Width = 100
         tpGraffiti.Controls.Add(copyFromLabel)
 
-        ' Copy From ComboBox
         Dim cbCopyFrom As New ComboBox
         cbCopyFrom.Top = 200
         cbCopyFrom.Left = 150
@@ -4227,7 +3897,6 @@ Public Class Form1
         cbCopyFrom.SelectedIndex = 0
         tpGraffiti.Controls.Add(cbCopyFrom)
 
-        ' Add the Remove button
         Dim btnRemove As New Button
         btnRemove.Text = "Remove"
         btnRemove.Top = 20
@@ -4247,13 +3916,10 @@ Public Class Form1
         Return tpGraffiti
     End Function
     Private Sub LoadGraffitiTab(jsonData As JObject, tabPage As TabPage)
-        ' Ensure the tab has the correct name
-        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last()) ' Extract the index from the tab name
+        Dim entryIndex As Integer = Integer.Parse(tabPage.Text.Split(" "c).Last())
         tabPage.Text = "Graffiti Entry " & entryIndex
 
-        ' Preset ComboBox
         Dim cbPreset As ComboBox = CType(tabPage.Controls("cbPreset"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         Dim cbPresetValue As String = jsonData("preset").ToString()
         If cbPresetValue.StartsWith("REF:InteractablePreset|") Then
             cbPresetValue = cbPresetValue.Replace("REF:InteractablePreset|", "")
@@ -4267,13 +3933,10 @@ Public Class Form1
             cbPreset.SelectedIndex = 0
         End If
 
-        ' Pos ComboBox
         Dim cbPos As ComboBox = CType(tabPage.Controls("cbPos"), ComboBox)
         SetComboBoxValue(cbPos, jsonData("pos"))
 
-        ' Art Image ComboBox
         Dim cbArtImage As ComboBox = CType(tabPage.Controls("cbArtImage"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         Dim cbArtImageValue As String = jsonData("artImage").ToString()
         If cbArtImageValue.StartsWith("REF:ArtPreset|") Then
             cbArtImageValue = cbArtImageValue.Replace("REF:ArtPreset|", "")
@@ -4287,21 +3950,16 @@ Public Class Form1
             cbArtImage.SelectedIndex = 0
         End If
 
-        ' DDS Message Text List TextBox
         Dim txtDDSMessageText As TextBox = CType(tabPage.Controls("txtDDSMessageText"), TextBox)
         txtDDSMessageText.Text = If(jsonData("ddsMessageTextList")?.ToString(), String.Empty)
 
-        ' Color TextBox
         Dim txtColor As TextBox = CType(tabPage.Controls("txtColor"), TextBox)
         txtColor.Text = If(jsonData("color")?.ToString(), String.Empty)
 
-        ' Size NumericUpDown
         Dim numSize As NumericUpDown = CType(tabPage.Controls("numSize"), NumericUpDown)
         numSize.Value = If(jsonData("size") IsNot Nothing, CDec(jsonData("size")), 0)
 
-        ' Copy From ComboBox (set text directly)
         Dim cbCopyFrom As ComboBox = CType(tabPage.Controls("cbCopyFrom"), ComboBox)
-        ' Retrieve the original value and remove the prefix if it exists
         If jsonData("copyFrom") IsNot Nothing Then
             Dim copyFromValue As String = jsonData("copyFrom").ToString()
             If copyFromValue.StartsWith("REF:MurderMO|") Then
@@ -4332,14 +3990,12 @@ Public Class Form1
         playerTauntTabOpen = True
         Dim tpPlayerTaunt As New TabPage("Player Taunts")
 
-        ' Create a label for the player taunt ComboBox
         Dim lblPlayerTaunt As New Label()
         lblPlayerTaunt.Text = "Select Taunt:"
         lblPlayerTaunt.Top = 10
         lblPlayerTaunt.Left = 10
         tpPlayerTaunt.Controls.Add(lblPlayerTaunt)
 
-        ' Create a ComboBox for selecting player taunts
         Dim cbPlayerTaunt As New ComboBox()
         cbPlayerTaunt.Name = "cbPlayerTaunt"
         cbPlayerTaunt.Top = 30
@@ -4350,10 +4006,9 @@ Public Class Form1
         For Each item As String In itemLines
             cbPlayerTaunt.Items.Add(item.Trim())
         Next
-        cbPlayerTaunt.SelectedIndex = 0 ' Set default selection
+        cbPlayerTaunt.SelectedIndex = 0
         tpPlayerTaunt.Controls.Add(cbPlayerTaunt)
         cbPlayerTaunt.BringToFront()
-        ' Create a ListBox for displaying the selected player taunts
         Dim lstPlayerTaunts As New ListBox()
         lstPlayerTaunts.Name = "lstPlayerTaunts"
         lstPlayerTaunts.Top = 60
@@ -4362,7 +4017,6 @@ Public Class Form1
         lstPlayerTaunts.Height = 150
         tpPlayerTaunt.Controls.Add(lstPlayerTaunts)
 
-        ' Create a Button to add the selected taunt to the ListBox
         Dim btnAddTaunt As New Button()
         btnAddTaunt.Text = "Add Taunt"
         btnAddTaunt.Top = 220
@@ -4374,7 +4028,6 @@ Public Class Form1
                                       End Sub
         tpPlayerTaunt.Controls.Add(btnAddTaunt)
 
-        ' Create a Button to remove the selected taunt from the ListBox
         Dim btnRemoveTaunt As New Button()
         btnRemoveTaunt.Text = "Remove Selected"
         btnRemoveTaunt.Top = 220
@@ -4386,7 +4039,6 @@ Public Class Form1
                                          End Sub
         tpPlayerTaunt.Controls.Add(btnRemoveTaunt)
 
-        ' Create a Button to remove the Player Taunt tab
         Dim btnRemove As New Button()
         btnRemove.Text = "Remove Tab"
         btnRemove.Top = 20
@@ -4416,9 +4068,8 @@ Public Class Form1
             If TypeOf taunt Is JValue Then
                 Dim tauntName As String = taunt.ToString()
 
-                ' Remove the prefix if it exists
                 If tauntName.StartsWith("REF:InteractablePreset|") Then
-                    tauntName = tauntName.Replace("REF:InteractablePreset|", "") ' Remove "REF:" prefix
+                    tauntName = tauntName.Replace("REF:InteractablePreset|", "")
                 End If
 
                 lstPlayerTaunts.Items.Add(tauntName)
@@ -4484,7 +4135,6 @@ Public Class Form1
             ResetTabCount()
             MergeJson(defaultJson, loadedJsonData)
 
-            ' Save the merged JSON back to the file (overwriting)
             File.WriteAllText(filePath, defaultJson.ToString())
             LoadJsonData(filePath)
 
@@ -4540,7 +4190,6 @@ Public Class Form1
 
             If Not String.IsNullOrWhiteSpace(folderName) Then
                 isCaseMadeOrLoaded = True
-                ' Combine the selected path with the new folder name
                 Dim newFolderPath As String = IO.Path.Combine(folderBrowserDialog.SelectedPath, folderName)
                 tempFilePath = newFolderPath
 
@@ -4551,7 +4200,6 @@ Public Class Form1
                      .fileOrder = New List(Of String) From {"REF:" + folderName.ToLower()},
                      .version = 1
                     }
-                ' Create the new folder
                 Try
 
                     IO.Directory.CreateDirectory(newFolderPath)
@@ -4570,7 +4218,6 @@ Public Class Form1
                     IO.File.WriteAllText(presetFilePath, GetDefaultJson)
                     IO.File.WriteAllText(manifestFilePath, maniOutput.ToString)
 
-                    ' Create the folders if they do not exist
                     IO.Directory.CreateDirectory(ddsContentPath)
                     IO.Directory.CreateDirectory(ddsPath)
                     IO.Directory.CreateDirectory(stringsPath)
@@ -4671,7 +4318,6 @@ Public Class Form1
             defaultValues(ctrl.Name) = CType(ctrl, RichTextBox).Text
         End If
 
-        ' Recursively handle container controls (TabControl, TabPage, GroupBox, Panel, etc.)
         If TypeOf ctrl Is TabControl Then
             For Each tabPage As TabPage In CType(ctrl, TabControl).TabPages
                 For Each childCtrl As Control In tabPage.Controls
@@ -4715,13 +4361,11 @@ Public Class Form1
 
         Dim targetTabControl As TabControl = CType(Me.Controls.Find("tabControlCase", True).FirstOrDefault(), TabControl)
         If targetTabControl IsNot Nothing AndAlso targetTabControl.TabPages.Count > 1 Then
-            ' Remove all TabPages except the first one
             For i As Integer = targetTabControl.TabPages.Count - 1 To 1 Step -1
                 targetTabControl.TabPages.RemoveAt(i)
             Next
         End If
 
-        ' Recursively handle container controls (TabControl, TabPage, GroupBox, Panel, etc.)
         If TypeOf ctrl Is TabControl Then
             For Each tabPage As TabPage In CType(ctrl, TabControl).TabPages
                 For Each childCtrl As Control In tabPage.Controls
@@ -4753,7 +4397,6 @@ Public Class Form1
             Dim key As String = propertyPair.Name
             Dim value As JToken = propertyPair.Value
 
-            ' Check if the value is null, empty, an empty array, or an empty object
             If value.Type = JTokenType.Null OrElse
                (value.Type = JTokenType.String AndAlso String.IsNullOrEmpty(value.ToString())) OrElse
                (value.Type = JTokenType.Array AndAlso Not value.Any()) OrElse
@@ -4762,7 +4405,6 @@ Public Class Form1
                (value.Type = JTokenType.Integer AndAlso Integer.Parse(value) = 0) Then
                 keysToRemove.Add(key)
             End If
-            ' Manual Removal
             If key = "useHexaco" Then
                 If value.Type = JTokenType.Boolean AndAlso Boolean.Parse(value) = False Then
                     keysToRemove.Add(key)
@@ -4826,7 +4468,6 @@ Public Class Form1
             Dim presetFilePath As String = IO.Path.Combine(saveDirectory, txtPresetName.Text.ToLower() & ".sodso.json")
             Dim manifestFilePath As String = IO.Path.Combine(saveDirectory, "murdermanifest.sodso.json")
 
-            ' Save the preset JSON file
             Try
                 IO.File.WriteAllText(presetFilePath, txtOutput.Text)
                 MessageBox.Show("Case file saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -4839,10 +4480,8 @@ Public Class Form1
                 isOutputChanged = True
             End Try
 
-            ' Save the manifest JSON file
             Try
                 IO.File.WriteAllText(manifestFilePath, txtManiOutput.Text)
-                'MessageBox.Show("Manifest file saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Catch ex As Exception
                 MessageBox.Show("Error saving manifest file: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
@@ -5136,11 +4775,9 @@ Public Class Form1
     End Sub
     Private Sub CheckForUpdates()
         Try
-            ' Use the raw URL to access the text file directly
             Dim updateFileUrl As String = "https://raw.githubusercontent.com/ShaneeexD/Case-Generator/3f05e99aa3ec88728b7eb4fbc26fe0fba4ddeed2/Case%20Generator/Resources/update.txt"
 
             Using client As New System.Net.WebClient()
-                ' Download the update information from the URL
                 Dim updateInfo As String = client.DownloadString(updateFileUrl)
                 Dim parts As String() = updateInfo.Split("|"c)
 
@@ -5148,7 +4785,6 @@ Public Class Form1
                     Dim latestVersion As String = parts(0)
                     Dim downloadLink As String = parts(1)
 
-                    ' Compare versions
                     If IsNewVersion(currentVersion, latestVersion) Then
                         Dim result As DialogResult = MessageBox.Show(
                         $"A new version {latestVersion} is available. Do you want to update?",
@@ -5193,12 +4829,6 @@ Public Class Form1
     End Function
 
 End Class
-
-'TODO
-
-'==============================================================
-'Finish Tool Tips
-'==============================================================
 
 
 
