@@ -7,7 +7,6 @@ Imports System.Text
 
 Public Class Form1
     Private currentVersion As String = "1.0.0" ' Your current application version
-    Private updateFilePath As String = "update.txt" ' Path to your update text file
 
     Private defaultValues As New Dictionary(Of String, Object)
     Private listBoxItemCounts As New Dictionary(Of ListBox, Integer)
@@ -5137,9 +5136,11 @@ Public Class Form1
     End Sub
     Private Sub CheckForUpdates()
         Try
-            Dim updateFileUrl As String = "https://download-files.wixmp.com/raw/ecb0f0_12f5c38b5d3947f283222554cd4de9c7.txt?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImlhdCI6MTcyNzc0ODQwMywiZXhwIjoxNzI3NzQ5MzEzLCJqdGkiOiI0MDlmZWRlMy1kZjU4LTRkNjMtYTMzNi01MDQ0Y2E3MzFiZTEiLCJvYmoiOltbeyJwYXRoIjoiL3Jhdy9lY2IwZjBfMTJmNWMzOGI1ZDM5NDdmMjgzMjIyNTU0Y2Q0ZGU5YzcudHh0In1dXSwiZGlzIjp7ImZpbGVuYW1lIjoidXBkYXRlLnR4dCIsInR5cGUiOiJpbmxpbmUifX0.roKpeHglClzHsVQFjifQZbl_51EonFYgIYQyL8vld0I"
+            ' Use the raw URL to access the text file directly
+            Dim updateFileUrl As String = "https://raw.githubusercontent.com/ShaneeexD/Case-Generator/3f05e99aa3ec88728b7eb4fbc26fe0fba4ddeed2/Case%20Generator/Resources/update.txt"
 
             Using client As New System.Net.WebClient()
+                ' Download the update information from the URL
                 Dim updateInfo As String = client.DownloadString(updateFileUrl)
                 Dim parts As String() = updateInfo.Split("|"c)
 
@@ -5156,19 +5157,22 @@ Public Class Form1
                         MessageBoxIcon.Information)
 
                         If result = DialogResult.Yes Then
-                            ' Open the download link
                             Process.Start(New ProcessStartInfo With {
                             .FileName = downloadLink,
                             .UseShellExecute = True
                 })
                         End If
                     End If
+                Else
+                    MessageBox.Show("Update information is not in the correct format.")
                 End If
             End Using
         Catch ex As Exception
             MessageBox.Show("Error checking for updates: " & ex.Message)
         End Try
     End Sub
+
+
     Private Function IsNewVersion(current As String, latest As String) As Boolean
         Return String.Compare(current, latest) < 0
     End Function
