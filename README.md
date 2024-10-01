@@ -18,4 +18,3 @@ Also VirusTotal: https://www.virustotal.com/gui/file/d0e7b41ca6a4175f3a2d0d6d2bc
 ![image](https://github.com/user-attachments/assets/5afc690d-eea0-4451-9cc0-1bfaa5c4a60b)
 
 
-Download: https://github.com/ShaneeexD/Case-Generator/releases/tag/Tool
