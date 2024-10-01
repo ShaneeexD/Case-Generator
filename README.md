@@ -4,6 +4,8 @@ It's fully functional but will be heavily refactored and updated in the future f
 
 Please let me know if you find any bugs and I will try to fix them asap.
 
+NOTE: Windows Defender may pick this up as a virus (it does for me), the source code is all available for you to see
+
 Currently working on finishing the tool tips.
 
 ![image](https://github.com/user-attachments/assets/25ed573d-5cad-461d-87f1-be3dd31c18ef)
