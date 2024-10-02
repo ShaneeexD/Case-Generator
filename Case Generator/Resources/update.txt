@@ -1,1 +1,1 @@
-1.0.0|https://github.com/ShaneeexD/Case-Generator
+1.0.3|https://github.com/ShaneeexD/Case-Generator
