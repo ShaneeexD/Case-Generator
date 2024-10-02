@@ -20,10 +20,8 @@ Public Class StringListForm
     End Sub
     Private Sub LoadGuidsAndTextsFromCsv(filePath As String)
         Try
-            ' Read all lines from the CSV file
             Dim lines() As String = IO.File.ReadAllLines(filePath)
 
-            ' Clear existing rows in the TableLayoutPanel
             tblStrings.Controls.Clear()
             tblStrings.RowCount = 0
 
@@ -36,37 +34,43 @@ Public Class StringListForm
             tblStrings.AutoSizeMode = AutoSizeMode.GrowOnly
 
             For Each line As String In lines
-                ' Split the line by commas
                 Dim parts() As String = line.Split(","c)
-                If parts.Length >= 6 Then ' Ensure there are at least 6 parts
-                    Dim guid As String = parts(0).Trim() ' The GUID is the first part
-                    Dim text As String = parts(2).Trim() ' The text is the third part
+                If parts.Length >= 6 Then
+                    Dim guid As String = parts(0).Trim()
+                    Dim text As String = parts(2).Trim()
 
-                    ' Ensure we have space for the new row
                     tblStrings.RowCount += 1
 
-                    ' Create new labels for the GUID and text
                     Dim lblGuid As New Label() With {
                     .Text = guid,
                     .AutoSize = True
                 }
-                    AddHandler lblGuid.Click, Sub(s, e) CopyToClipboard(lblGuid.Text)
+                    AddHandler lblGuid.MouseClick, Sub(s, e)
+                                                       If e.Button = MouseButtons.Right Then
+                                                           DeleteBlock(lblGuid.Text)
+                                                       End If
+                                                       If e.Button = MouseButtons.Left Then
+                                                           CopyToClipboard(lblGuid.Text)
+                                                       End If
+                                                   End Sub
 
                     Dim lblText As New Label() With {
                     .Text = text,
                     .AutoSize = True
                 }
-
-                    ' Add the labels to the TableLayoutPanel
-                    tblStrings.Controls.Add(lblGuid, 0, tblStrings.RowCount - 1) ' Column 0 for GUID
-                    tblStrings.Controls.Add(lblText, 1, tblStrings.RowCount - 1) ' Column 1 for text
+                    AddHandler lblText.MouseClick, Sub(s, e)
+                                                       If e.Button = MouseButtons.Left Then
+                                                           EditString(lblText.Text)
+                                                       End If
+                                                   End Sub
+                    tblStrings.Controls.Add(lblGuid, 0, tblStrings.RowCount - 1)
+                    tblStrings.Controls.Add(lblText, 1, tblStrings.RowCount - 1)
                 End If
             Next
 
-            ' Set column styles to ensure consistent width and allow for vertical sizing
             tblStrings.ColumnStyles.Clear()
-            tblStrings.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 300)) ' Fixed width for GUID column
-            tblStrings.ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize)) ' AutoSize for text column
+            tblStrings.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 300))
+            tblStrings.ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
 
         Catch ex As Exception
             MessageBox.Show("Error loading data: " & ex.Message & vbCrLf & vbCrLf & "You most likely have not made any strings yet.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -74,20 +78,16 @@ Public Class StringListForm
     End Sub
 
     Private Sub SetupTable()
-        ' Example: Setting up the TableLayoutPanel
-        Dim numRows As Integer = 20 ' Set to the number of rows you want
-        Dim numCols As Integer = 2 ' Set to the number of columns you want
+        Dim numRows As Integer = 20
+        Dim numCols As Integer = 2
 
-        ' Clear any existing styles
         tblStrings.ColumnStyles.Clear()
         tblStrings.RowStyles.Clear()
 
-        ' Set equal column widths (e.g., 50% of total width for each column)
         For i As Integer = 0 To numCols - 1
             tblStrings.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100 / numCols))
         Next
 
-        ' Set equal row heights (e.g., 30 pixels for each row)
         For i As Integer = 0 To numRows - 1
             tblStrings.RowStyles.Add(New RowStyle(SizeType.Absolute, 18))
         Next
@@ -96,8 +96,117 @@ Public Class StringListForm
     End Sub
 
     Private Sub CopyToClipboard(text As String)
-        ' Copy the provided text to the clipboard
         Clipboard.SetText(text)
         MessageBox.Show("Block copied to clipboard: " & text, "Copied", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
+    Private Sub DeleteBlock(guid As String)
+        Dim result As DialogResult = MessageBox.Show("Are you sure you want to delete this block?", "Delete Block", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+        If result = DialogResult.Yes Then
+            Dim file As String
+            Dim blockFile As String
+
+            If Form1.lastCreated = True Then
+                Dim directoryPath As String = IO.Path.Combine(folderNameNew, "DDSContent")
+                blockFile = IO.Path.Combine(directoryPath, "DDS", "Blocks", guid & ".BLOCK")
+                file = IO.Path.Combine(directoryPath, "strings", "english", "dds", "dds.blocks.csv")
+            ElseIf Form1.lastOpened = True Then
+                Dim directoryPath As String = System.IO.Path.GetDirectoryName(Form1.tempFilePath)
+                blockFile = IO.Path.Combine(directoryPath, "DDSContent", "DDS", "Blocks", guid & ".BLOCK")
+                file = IO.Path.Combine(directoryPath, "DDSContent", "strings", "english", "dds", "dds.blocks.csv")
+            End If
+
+            If IO.File.Exists(file) Then
+                Dim lines As List(Of String) = IO.File.ReadAllLines(file).ToList()
+
+                Dim lineToRemove As String = lines.FirstOrDefault(Function(line) line.StartsWith(guid))
+
+                If lineToRemove IsNot Nothing Then
+                    lines.Remove(lineToRemove)
+                    IO.File.WriteAllLines(file, lines)
+
+                    If IO.File.Exists(blockFile) Then
+                        IO.File.Delete(blockFile)
+                    Else
+                        MessageBox.Show("Associated BLOCK file not found.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    End If
+
+                    Dim rowIndex As Integer = -1
+                    For i As Integer = 0 To tblStrings.RowCount - 1
+                        Dim lblGuid As Label = CType(tblStrings.GetControlFromPosition(0, i), Label)
+                        If lblGuid IsNot Nothing AndAlso lblGuid.Text = guid Then
+                            rowIndex = i
+                            Exit For
+                        End If
+                    Next
+
+                    If rowIndex >= 0 Then
+                        tblStrings.Controls.Remove(tblStrings.GetControlFromPosition(0, rowIndex))
+                        tblStrings.Controls.Remove(tblStrings.GetControlFromPosition(1, rowIndex))
+                        tblStrings.RowCount -= 1
+                    End If
+                    LoadGuidsAndTextsFromCsv(file)
+                Else
+                    MessageBox.Show("Block not found in the CSV file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+            Else
+                MessageBox.Show("CSV file not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
+        End If
+    End Sub
+
+    Private Sub EditString(originalText As String)
+        Dim input As String = InputBox("Edit the string:", "Edit String", originalText)
+
+        If Not String.IsNullOrEmpty(input) Then
+            Dim file As String
+
+            If Form1.lastCreated = True Then
+                Dim directoryPath As String = IO.Path.Combine(folderNameNew, "DDSContent")
+                file = IO.Path.Combine(directoryPath, "strings", "english", "dds", "dds.blocks.csv")
+            ElseIf Form1.lastOpened = True Then
+                Dim directoryPath As String = System.IO.Path.GetDirectoryName(Form1.tempFilePath)
+                file = IO.Path.Combine(directoryPath, "DDSContent", "strings", "english", "dds", "dds.blocks.csv")
+            End If
+
+            If IO.File.Exists(file) Then
+                Dim lines As List(Of String) = IO.File.ReadAllLines(file).ToList()
+
+                Dim lineIndex As Integer = lines.FindIndex(Function(line) line.Contains(originalText))
+
+                If lineIndex >= 0 Then
+                    Dim columns As String() = lines(lineIndex).Split(","c)
+
+                    If columns.Length > 2 Then
+                        columns(2) = input
+                        lines(lineIndex) = String.Join(",", columns)
+
+                        IO.File.WriteAllLines(file, lines)
+
+                        UpdateDisplayedStringInTable(originalText, input)
+
+                    Else
+                        MessageBox.Show("Invalid CSV format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+                Else
+                    MessageBox.Show("Original string not found in the file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+            Else
+                MessageBox.Show("CSV file not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
+        End If
+    End Sub
+
+
+    Private Sub UpdateDisplayedStringInTable(originalText As String, newText As String)
+        For Each control As Control In tblStrings.Controls
+            If TypeOf control Is Label Then
+                Dim lbl As Label = CType(control, Label)
+                If lbl.Text = originalText Then
+                    lbl.Text = newText
+                    Exit For
+                End If
+            End If
+        Next
+    End Sub
+
 End Class
