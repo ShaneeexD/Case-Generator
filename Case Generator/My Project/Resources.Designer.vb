@@ -260,7 +260,7 @@ Namespace My.Resources
                 Return ResourceManager.GetString("jobpreset", resourceCulture)
             End Get
         End Property
-        
+
         '''<summary>
         '''  Looks up a localized string similar to null
         '''CorporateJealousy
@@ -279,6 +279,12 @@ Namespace My.Resources
         Friend ReadOnly Property murdermo() As String
             Get
                 Return ResourceManager.GetString("murdermo", resourceCulture)
+            End Get
+        End Property
+
+        Friend ReadOnly Property windowstylepreset() As String
+            Get
+                Return ResourceManager.GetString("windowstylepreset", resourceCulture)
             End Get
         End Property
     End Module

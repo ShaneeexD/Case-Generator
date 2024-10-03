@@ -4,7 +4,7 @@ Imports System.IO
 Imports System.Text
 
 Public Class Form1
-    Private currentVersion As String = "1.0.0"
+    Private currentVersion As String = "1.1.0"
 
     Private defaultValues As New Dictionary(Of String, Object)
     Private listBoxItemCounts As New Dictionary(Of ListBox, Integer)
@@ -28,8 +28,11 @@ Public Class Form1
 
     Private loadedJsonDataPub As JObject
 
-    Public tempFilePath, tempFolderName, folderNameNew As String
+    Public tempFilePath, tempFolderName, folderNameNew, newFileName As String
+    Public preset As String
+
     Public lastCreated, lastOpened As Boolean
+
     Private Function GetDefaultJson() As String
         Return "{
   ""presetName"": """",
@@ -4090,7 +4093,6 @@ Public Class Form1
         Else
             OpenCase()
         End If
-
     End Sub
     Private Sub NewToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles NewToolStripMenuItem.Click
         If isCaseMadeOrLoaded = True AndAlso isOutputChanged = True Then
@@ -4552,7 +4554,7 @@ Public Class Form1
             frm.Enabled = True
         Next
     End Sub
-    Private Sub AddValueChangedHandlers(ByVal parent As Control)
+    Public Sub AddValueChangedHandlers(ByVal parent As Control)
         For Each ctrl As Control In parent.Controls
             If TypeOf ctrl Is MenuStrip Then
                 Continue For
@@ -4606,7 +4608,7 @@ Public Class Form1
         Next
     End Sub
 
-    Private Sub RemoveValueChangedHandlers(ByVal parent As Control)
+    Public Sub RemoveValueChangedHandlers(ByVal parent As Control)
         For Each ctrl As Control In parent.Controls
             If TypeOf ctrl Is MenuStrip Then
                 Continue For
@@ -4657,7 +4659,7 @@ Public Class Form1
             AddValueChangedHandlers(newTabPage)
         End If
     End Sub
-    Private Sub ListBoxChanged(ByVal parent As Control)
+    Public Sub ListBoxChanged(ByVal parent As Control)
         For Each ctrl As Control In parent.Controls
             If TypeOf ctrl Is ListBox Then
                 Dim listBox As ListBox = DirectCast(ctrl, ListBox)
@@ -4688,7 +4690,7 @@ Public Class Form1
             CheckListBoxItemCount(listBox)
         Next
     End Sub
-    Private Sub CheckListBoxItemCount(ByVal listBox As ListBox)
+    Public Sub CheckListBoxItemCount(ByVal listBox As ListBox)
         Dim previousCount As Integer = listBoxItemCounts(listBox)
         Dim currentCount As Integer = listBox.Items.Count
 
@@ -4697,10 +4699,10 @@ Public Class Form1
             listBoxItemCounts(listBox) = currentCount
         End If
     End Sub
-    Private Sub ControlValueChanged(sender As Object, e As EventArgs)
+    Public Sub ControlValueChanged(sender As Object, e As EventArgs)
         btnGenerateCase.PerformClick()
     End Sub
-    Private Sub ClearListBoxCounts()
+    Public Sub ClearListBoxCounts()
         listBoxItemCounts.Clear()
     End Sub
     Private Sub UpdateToolMenus()
@@ -4812,11 +4814,16 @@ Public Class Form1
             MessageBox.Show("Error checking for updates: " & ex.Message)
         End Try
     End Sub
-
-
     Private Function IsNewVersion(current As String, latest As String) As Boolean
         Return String.Compare(current, latest) < 0
     End Function
+
+    Private Sub EvidencePresetsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles EvidencePresetsToolStripMenuItem.Click
+        Dim presetDefault As New EvidencePresetDefault()
+        preset = presetDefault.GetDefaultJson()
+        EvidencePresetForm.Show()
+    End Sub
+
     Public Function FindControlRecursive(Of T As Control)(ByVal parent As Control, ByVal matchCondition As Func(Of T, Boolean)) As T
         For Each ctrl As Control In parent.Controls
 

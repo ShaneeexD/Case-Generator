@@ -116,6 +116,8 @@ Partial Class Form1
         NewDDSToolStripMenuItem = New ToolStripMenuItem()
         LoadStringListToolStripMenuItem = New ToolStripMenuItem()
         RemoveUnusedKeysToolStripMenuItem = New ToolStripMenuItem()
+        ProjectToolStripMenuItem = New ToolStripMenuItem()
+        EvidencePresetsToolStripMenuItem = New ToolStripMenuItem()
         HelpToolStripMenuItem = New ToolStripMenuItem()
         UpdateToolStripMenuItem = New ToolStripMenuItem()
         itemAutoGen = New ToolStripMenuItem()
@@ -1017,27 +1019,27 @@ Partial Class Form1
         ' 
         NewToolStripMenuItem.Name = "NewToolStripMenuItem"
         NewToolStripMenuItem.ShortcutKeys = Keys.Control Or Keys.N
-        NewToolStripMenuItem.Size = New Size(216, 26)
+        NewToolStripMenuItem.Size = New Size(224, 26)
         NewToolStripMenuItem.Text = "New Case"
         ' 
         ' OpenToolStripMenuItem
         ' 
         OpenToolStripMenuItem.Name = "OpenToolStripMenuItem"
         OpenToolStripMenuItem.ShortcutKeys = Keys.Control Or Keys.O
-        OpenToolStripMenuItem.Size = New Size(216, 26)
+        OpenToolStripMenuItem.Size = New Size(224, 26)
         OpenToolStripMenuItem.Text = "Open Case"
         ' 
         ' SaveCaseToolStripMenuItem
         ' 
         SaveCaseToolStripMenuItem.Name = "SaveCaseToolStripMenuItem"
         SaveCaseToolStripMenuItem.ShortcutKeys = Keys.Control Or Keys.S
-        SaveCaseToolStripMenuItem.Size = New Size(216, 26)
+        SaveCaseToolStripMenuItem.Size = New Size(224, 26)
         SaveCaseToolStripMenuItem.Text = "Save Case"
         ' 
         ' CloseCaseToolStripMenuItem
         ' 
         CloseCaseToolStripMenuItem.Name = "CloseCaseToolStripMenuItem"
-        CloseCaseToolStripMenuItem.Size = New Size(216, 26)
+        CloseCaseToolStripMenuItem.Size = New Size(224, 26)
         CloseCaseToolStripMenuItem.Text = "Close Case"
         ' 
         ' SearchToolStripMenuItem
@@ -1052,7 +1054,7 @@ Partial Class Form1
         ' ToolsToolStripMenuItem
         ' 
         ToolsToolStripMenuItem.BackColor = Color.White
-        ToolsToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {NewDDSToolStripMenuItem, LoadStringListToolStripMenuItem, RemoveUnusedKeysToolStripMenuItem})
+        ToolsToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {NewDDSToolStripMenuItem, LoadStringListToolStripMenuItem, RemoveUnusedKeysToolStripMenuItem, ProjectToolStripMenuItem})
         ToolsToolStripMenuItem.Name = "ToolsToolStripMenuItem"
         ToolsToolStripMenuItem.Size = New Size(58, 24)
         ToolsToolStripMenuItem.Text = "Tools"
@@ -1078,6 +1080,19 @@ Partial Class Form1
         RemoveUnusedKeysToolStripMenuItem.Size = New Size(233, 26)
         RemoveUnusedKeysToolStripMenuItem.Text = "Remove Unused Keys"
         RemoveUnusedKeysToolStripMenuItem.ToolTipText = "Removes unused/default keys."
+        ' 
+        ' ProjectToolStripMenuItem
+        ' 
+        ProjectToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {EvidencePresetsToolStripMenuItem})
+        ProjectToolStripMenuItem.Name = "ProjectToolStripMenuItem"
+        ProjectToolStripMenuItem.Size = New Size(233, 26)
+        ProjectToolStripMenuItem.Text = "Presets"
+        ' 
+        ' EvidencePresetsToolStripMenuItem
+        ' 
+        EvidencePresetsToolStripMenuItem.Name = "EvidencePresetsToolStripMenuItem"
+        EvidencePresetsToolStripMenuItem.Size = New Size(224, 26)
+        EvidencePresetsToolStripMenuItem.Text = "Evidence Preset"
         ' 
         ' HelpToolStripMenuItem
         ' 
@@ -1268,4 +1283,6 @@ Partial Class Form1
     Friend WithEvents itemAutoGen As ToolStripMenuItem
     Friend WithEvents itemRemoveKeys As ToolStripMenuItem
     Friend WithEvents itemToolTips As ToolStripMenuItem
+    Friend WithEvents ProjectToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents EvidencePresetsToolStripMenuItem As ToolStripMenuItem
 End Class
